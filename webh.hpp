@@ -1,6 +1,6 @@
 
-#ifndef WEBSERV_WEBSERV_HPP
-#define WEBSERV_WEBSERV_HPP
+#ifndef WEBSERV_WEBH_HPP
+#define WEBSERV_WEBH_HPP
 
 #include <iostream>
 #include <map>
@@ -11,12 +11,14 @@
 
 #include "VirtualServer.hpp"
 #include "TcpListener.hpp"
+#include "WebServ.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <cstring>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define SERV_PORT 8082
 #define DEBUG_MODE 1

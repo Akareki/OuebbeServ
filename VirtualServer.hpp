@@ -1,7 +1,7 @@
 #ifndef WEBSERV_SERVER_HPP
 #define WEBSERV_SERVER_HPP
 
-#include "webserv.hpp"
+#include "webh.hpp"
 
 class VirtualServer {
 public:
@@ -14,7 +14,6 @@ private:
 	std::string 						_index_file;
 	std::string 						_endpoint;
 	std::map<std::string, std::string>	_request_headers;
-
 	//config attributes
 	std::string 						_root_path;
 };

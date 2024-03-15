@@ -35,6 +35,25 @@ int	initialize()
 	return sockfd;
 }
 
+//init listen
+TcpListener::TcpListener()
+{
+	_sock_fd = initialize();
+	if (_sock_fd == -1)
+		throw std::exception();
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd == -1)
+		throw std::exception();
+
+	_event.events = EPOLLIN;
+	_event.data.fd = _sock_fd;
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _sock_fd, &_event))
+	{
+		close(_epoll_fd);
+		throw std::exception();
+	}
+}
+
 int	accept_connection(int sockfd)
 {
 	int connfd;
@@ -59,7 +78,8 @@ std::string read_request(int connfd)
 	{
 		std::cerr << "read failed" << std::endl;
 		close(connfd);
-		throw std::exception();
+		return ("");
+		//throw std::exception();
 	}
 	buffer[len_read] = '\0';
 	std::string request(buffer);
@@ -72,41 +92,46 @@ void	answer_request(const std::string &request, int connfd)
 	VirtualServer virtual_serv;
 	std::string full_request = virtual_serv.answer_request(request);
 	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
-	if (size_send == -1) throw std::exception();
+	if (size_send == -1)
+		throw std::exception();
 	std::cout << "size_send : " << size_send << std::endl;
 	close(connfd);
 }
 
-
 void TcpListener::http_listen()
 {
-	int sockfd = initialize();
-	int connfd;
-
-	if (sockfd == -1)
-		throw std::exception();
-	struct epoll_event event;
-	int epoll_fd = epoll_create1(0);
-	if (epoll_fd == -1)
-		throw std::exception();
-
-	event.events = EPOLLIN;
-	event.data.fd = sockfd;
-
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, 0, &event))
-	{
-		close(epoll_fd);
-		throw std::exception();
-	}
-	if (close(epoll_fd))
-		throw std::exception();
-
-	while (true)
-	{
-		connfd = accept_connection(sockfd);
-		if (connfd == -1)
-			continue ;
-		std::string request = read_request(connfd);
-		answer_request(request, connfd);
-	}
+		int connfd;
+		int fd_amount = epoll_wait(_epoll_fd, _events, 10, -1);
+		if (fd_amount == -1)
+		{
+			std::cerr << "epoll_wait failed" << std::endl;
+			throw std::exception();
+		}
+		for (int n = 0; n < fd_amount; n++)
+		{
+			if (_events[n].data.fd == _sock_fd)
+			{
+				connfd = accept_connection(_sock_fd);
+				if (connfd == -1)
+				{
+					std::cerr << "accept connection failed" << std::endl;
+					throw std::exception();
+				}
+				//todo : set non blocking
+				//fcntl(connfd, F_SETFL, O_NONBLOCK);
+				_event.events = EPOLLIN | EPOLLET;
+				_event.data.fd = connfd;
+				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, connfd, &_event) == -1)
+				{
+					std::cerr << "epoll ctl failed" << std::endl;
+					throw std::exception();
+				}
+			}
+			else
+			{
+				std::string request = read_request(connfd);
+				if (!request.empty())
+					answer_request(request, connfd);
+			}
+		}
 }

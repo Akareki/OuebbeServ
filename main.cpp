@@ -1,9 +1,9 @@
-#include "webserv.hpp"
+#include "webh.hpp"
+
 int main()
 {
-	TcpListener webserv;
 
-	//webserv.parse();
-	webserv.http_listen();
+	WebServ webservbro;
 
+	webservbro.start();
 }
