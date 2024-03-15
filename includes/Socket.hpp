@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/15 11:43:20 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/15 15:09:11 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,16 +20,19 @@
 class Socket
 {
 	public:
+		Socket();
+		Socket(const Socket&);
 		Socket(const std::string &, const std::string &);
 		~Socket();
+		const std::string &getHost() const;
+		const std::string &getPort() const;
+		Socket &operator=(const Socket&);
+		void addServer(VirtualServer);
 		class SocketException: public std::exception
 		{
 			virtual const char *what() const throw();
 		};
 	private:
-		Socket &operator=(const Socket&);
-		Socket(const Socket&);
-		Socket();
 		int _sockfd;
 		std::string _host;
 		std::string _port;

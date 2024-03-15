@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/15 11:42:22 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/15 15:17:22 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,12 @@
 class Location
 {
 	public:
+		Location();
 		Location(const std::string &);
-		~Location();
-	private:
 		Location(const Location&);
 		Location &operator=(const Location&);
-		Location();
+		~Location();
+	private:
 		std::string _root;
 		std::string _index;
 		std::string _redirect;

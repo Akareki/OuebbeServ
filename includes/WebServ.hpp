@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:37:37 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/15 11:49:45 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/15 12:08:28 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,11 @@ class WebServ
 		~WebServ();
 		class WebServException: public std::exception
 		{
-			virtual const char *what() const throw();
+			public:
+				virtual const char *what() const throw();
+				WebServException(const std::string &);
+			private:
+				std::string _msg;
 		};
 	private:
 		WebServ &operator=(const WebServ&);
