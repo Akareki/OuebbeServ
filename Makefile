@@ -1,8 +1,8 @@
 CC=c++
 CFLAGS=-Wall -Wextra -Werror -std=c++98
 NAME=webserv
-HEADER=webserv.hpp Server.hpp TcpListener.hpp
-SRCS= ./main.cpp ./Server.cpp ./TcpListener.cpp ./utils.cpp
+HEADER=webserv.hpp VirtualServer.hpp TcpListener.hpp
+SRCS= ./main.cpp ./VirtualServer.cpp ./TcpListener.cpp ./utils.cpp
 OBJS= $(SRCS:.cpp=.o)
 
 all: $(NAME)

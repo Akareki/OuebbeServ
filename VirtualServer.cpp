@@ -1,7 +1,7 @@
 
-#include "Server.hpp"
+#include "VirtualServer.hpp"
 
-std::string	Server::answer_request(const std::string &request)
+std::string	VirtualServer::answer_request(const std::string &request)
 {
 	this->parse_request(request);
 
@@ -18,7 +18,7 @@ std::string	Server::answer_request(const std::string &request)
 	return full_request;
 }
 
-void Server::parse_request(const std::string &request)
+void VirtualServer::parse_request(const std::string &request)
 {
 	if (DEBUG_MODE == 1)
 		std::cout << request << std::endl;

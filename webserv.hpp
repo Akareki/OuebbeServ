@@ -9,7 +9,7 @@
 #include <sstream>
 #include <cstdlib>
 
-#include "Server.hpp"
+#include "VirtualServer.hpp"
 #include "TcpListener.hpp"
 
 #include <sys/socket.h>

@@ -3,9 +3,9 @@
 
 #include "webserv.hpp"
 
-class Server {
+class VirtualServer {
 public:
-	Server() {};
+	VirtualServer() {};
 	void			parse_request(const std::string &request);
 	std::string	answer_request(const std::string &request);
 private:

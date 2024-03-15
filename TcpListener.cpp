@@ -69,7 +69,7 @@ std::string read_request(int connfd)
 
 void	answer_request(const std::string &request, int connfd)
 {
-	Server virtual_serv;
+	VirtualServer virtual_serv;
 	std::string full_request = virtual_serv.answer_request(request);
 	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
 	if (size_send == -1) throw std::exception();
