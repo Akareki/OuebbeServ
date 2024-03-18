@@ -4,7 +4,7 @@
 
 #include "TcpListener.hpp"
 
-int	initialize()
+int	initialize(int port)
 {
 	int sockfd;
 	struct sockaddr_in serv_addr;
@@ -18,8 +18,12 @@ int	initialize()
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(SERV_PORT);
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
+	serv_addr.sin_port = htons(port);
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	/*
+	char *buff = "ouais";
+	setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt));
+	*/
 
 	//network funcs
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
@@ -36,9 +40,9 @@ int	initialize()
 }
 
 //init listen
-TcpListener::TcpListener()
+TcpListener::TcpListener(int port)
 {
-	_sock_fd = initialize();
+	_sock_fd = initialize(port);
 	if (_sock_fd == -1)
 		throw std::exception();
 	_epoll_fd = epoll_create1(0);
@@ -82,9 +86,7 @@ std::string read_request(int connfd)
 		//throw std::exception();
 	}
 	buffer[len_read] = '\0';
-	std::string request(buffer);
-
-	return (request);
+	return (buffer);
 }
 
 void	answer_request(const std::string &request, int connfd)
@@ -101,7 +103,7 @@ void	answer_request(const std::string &request, int connfd)
 void TcpListener::http_listen()
 {
 		int connfd;
-		int fd_amount = epoll_wait(_epoll_fd, _events, 10, -1);
+		int fd_amount = epoll_wait(_epoll_fd, _events, 10, 0);
 		if (fd_amount == -1)
 		{
 			std::cerr << "epoll_wait failed" << std::endl;

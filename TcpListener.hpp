@@ -8,7 +8,7 @@
 
 class TcpListener {
 public:
-	TcpListener();
+	TcpListener(int port);
 	//TcpListener(const std::vector<std::string> &server_names, int server_amount) {(void)server_names; (void)server_names;};
 	void	http_listen();
 	void	parse_request(const std::string &request);

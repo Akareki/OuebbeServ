@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define SERV_PORT 8082
 #define DEBUG_MODE 1
 
 std::vector<std::string> split(const std::string &str, char delimiter);
