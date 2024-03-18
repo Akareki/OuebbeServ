@@ -20,6 +20,9 @@
     div {
         margin-top: 10px;
     }
+    .inline {
+        display: inline;
+    }
 </style>
 <body>
     <h1 id="feur">Salut !</h1>
@@ -32,9 +35,23 @@
             <label for="myInput">Nouveau titre : </label>
             <input type="text" id="myInput" name="myInput">
         </div>
+        <div>
+            <label for="strlenInput">strlen : </label>
+            <input type="text" id="strlenInput" name="strlenInput">
+            <p class="inline" id="strlenValue"></p>
+        </div>
+        <div>
+            <label for="strcmpInput">strcmp : </label>
+            <input type="text" id="strcmpInput" name="strcmpInput">
+            <input type="text" id="strcmpInput2" name="strcmpInput2">
+            <p class="inline" id="strcmpValue"></p>
+        </div>
         <br>
-        <button onClick="editTitle()">Mettre à jour le titre</button>
+        <button onClick="doComputation()">Mettre à jour le titre</button>
     </ul>
+
+    <img src="panda.webp">
+
 
 </body>
 

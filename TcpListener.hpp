@@ -12,7 +12,6 @@ public:
 	//TcpListener(const std::vector<std::string> &server_names, int server_amount) {(void)server_names; (void)server_names;};
 	void	http_listen();
 	void	parse_request(const std::string &request);
-	void	parse_config();
 private:
 	int 	_epoll_fd;
 	int 	_sock_fd;

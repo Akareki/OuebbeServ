@@ -20,6 +20,7 @@ int	initialize(int port)
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(port);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
 	/*
 	char *buff = "ouais";
 	setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt));
@@ -76,8 +77,8 @@ int	accept_connection(int sockfd)
 
 std::string read_request(int connfd)
 {
-	char buffer[10000];
-	ssize_t len_read = read(connfd, buffer, 10000);
+	char buffer[10000] = {0};
+	ssize_t len_read = recv(connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
 	if (len_read == -1)
 	{
 		std::cerr << "read failed" << std::endl;
@@ -131,9 +132,9 @@ void TcpListener::http_listen()
 			}
 			else
 			{
-				std::string request = read_request(connfd);
+				std::string request = read_request(_events[n].data.fd);
 				if (!request.empty())
-					answer_request(request, connfd);
+					answer_request(request, _events[n].data.fd);
 			}
 		}
 }

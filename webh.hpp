@@ -18,6 +18,8 @@
 #include <sys/epoll.h>
 #include <cstring>
 #include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <fcntl.h>
 
 #define DEBUG_MODE 1
