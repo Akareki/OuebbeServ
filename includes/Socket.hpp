@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/15 15:09:11 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/18 14:21:42 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class Socket
 		{
 			virtual const char *what() const throw();
 		};
+		void display();
 	private:
 		int _sockfd;
 		std::string _host;

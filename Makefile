@@ -6,14 +6,14 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/03/15 10:28:11 by aoizel           ###   ########.fr        #
+#    Updated: 2024/03/18 14:32:00 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME			=	webserv
 
-RAW_SOURCES		=	main.cpp
+RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp
 
 SOURCES_DIR		=	sources/
 
@@ -27,7 +27,7 @@ CPP				=	c++ $(CPP_FLAGS)
 
 OBJECTS_DIR		=	.objs/
 
-OBJECTS			=	$(addprefix $(OBJECTS_DIR),$(SOURCES:.cpp=.o))
+OBJECTS			=	$(addprefix $(OBJECTS_DIR),$(RAW_SOURCES:.cpp=.o))
 
 DEPENDENCIES	=	Makefile
 
@@ -40,7 +40,7 @@ $(NAME):			$(OBJECTS_DIR) $(OBJECTS)
 $(OBJECTS_DIR):
 					mkdir -p .objs/
 
-$(OBJECTS_DIR)%.o:	%.cpp $(DEPENDENCIES)
+$(OBJECTS_DIR)%.o:	$(SOURCES_DIR)%.cpp $(DEPENDENCIES)
 						$(CPP) -c $< -I$(INCLUDES_DIR) -o $@
 
 $(OBJECTS_DIR)%.d: %.cpp | $(OBJECTS_DIR)
