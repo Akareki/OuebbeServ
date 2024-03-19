@@ -13,13 +13,13 @@ void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 
 VirtualServer::VirtualServer() :
 		_host("127.0.0.1"), _port("8080"), _server_name(), _root("public_html"),
-		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
 		_host("127.0.0.1"), _port("8080"), _server_name(), _root(),
-		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
 {
 	std::string line;
 	std::string opt_name;
@@ -202,7 +202,7 @@ void VirtualServer::display() const
 std::string directory_listing(const std::string &directory)
 {
 	std::string html_body = "<html><body><ul>";
-	DIR *dir = opendir(directory.c_str());
+ 	DIR *dir = opendir(directory.c_str());
 	struct dirent *s_read;
 
 	if (!dir)
@@ -233,17 +233,21 @@ void	VirtualServer::answer_request(const std::string &request, int connfd)
 {
 	std::string full_path = this->parse_request(request);
 
-	//std::string full_path = _root + _index;
 	std::cout << "full_path : " << full_path << std::endl;
-	std::ifstream file1(full_path.c_str());
+	std::vector<std::string> request_vector = split(request, ' ');
 	std::string body;
-	if (file1)
+	if (request_vector[0] == "GET")
 	{
-		std::stringstream body_buffer;
-		body_buffer << file1.rdbuf();
-		body = body_buffer.str();
+		std::ifstream file1(full_path.c_str());
+		if (file1)
+		{
+			std::stringstream body_buffer;
+			body_buffer << file1.rdbuf();
+			body = body_buffer.str();
+		}
+		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && request_vector[1] == "/")))
+			body = directory_listing(_root);
 	}
-	//body = directory_listing(_root_path + _index_file);
 	std::string full_request = "HTTP/1.1 200 OK\r\nServer: webserv\r\n\r\n" + body;
 	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
 	if (size_send == -1)
@@ -252,25 +256,21 @@ void	VirtualServer::answer_request(const std::string &request, int connfd)
 	close(connfd);
 }
 
-/*void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > headers)
-{
-
-}*/
-
 std::string VirtualServer::parse_request(const std::string &request)
 {
 	if (DEBUG_MODE == 1)
 		std::cout << request << std::endl;
-	std::map<std::string, std::vector<std::string> > headers;
-
-	//fill_map(request, headers);
 
 	std::vector<std::string> request_vector = split(request, ' ');
 
 	std::string full_request(_root + request_vector[1]);
 
 	if (full_request[full_request.length() - 1] == '/')
+	{
 		full_request += _index;
+		_isindexadded = true;
+	}
+
 	return (full_request);
 
 

@@ -51,6 +51,7 @@ private:
 	std::string _server_name;
 	std::string _root;
 	std::string _index;
+	bool		_isindexadded;
 	bool _autoindex;
 	unsigned int _client_max_body_size;
 	std::map<int, std::string> _error_pages;
