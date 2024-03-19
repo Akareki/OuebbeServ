@@ -2,9 +2,9 @@
 // Created by wlalaoui on 3/15/24.
 //
 
-#include "TcpListener.hpp"
+#include "../includes/Socket.hpp"
 
-int	initialize(int port)
+int	initialize(const std::string &host, int port)
 {
 	int sockfd;
 	struct sockaddr_in serv_addr;
@@ -17,6 +17,8 @@ int	initialize(int port)
 	//initialize structure
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
+	//todo : maybe replace INADDR_ANY by host
+	(void)host;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(port);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -40,22 +42,72 @@ int	initialize(int port)
 	return sockfd;
 }
 
-//init listen
-TcpListener::TcpListener(int port)
+Socket::Socket(const std::string &host, const std::string &port): _host(host), _port(port)
 {
-	_sock_fd = initialize(port);
-	if (_sock_fd == -1)
+	_sockfd = initialize(host, atoi(port.c_str()));
+	if (_sockfd == -1)
 		throw std::exception();
-	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd == -1)
+	_epollfd = epoll_create1(0);
+	if (_epollfd == -1)
 		throw std::exception();
 
 	_event.events = EPOLLIN;
-	_event.data.fd = _sock_fd;
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _sock_fd, &_event))
+	_event.data.fd = _sockfd;
+	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
 	{
-		close(_epoll_fd);
+		close(_epollfd);
 		throw std::exception();
+	}
+}
+
+Socket::~Socket()
+{
+}
+
+Socket::Socket(const Socket &other)
+{
+	*this = other;
+}
+
+Socket &Socket::operator=(const Socket &other)
+{
+	_host = other._host;
+	_port = other._port;
+	_sockfd = other._sockfd;
+	_servers = other._servers;
+	_epollfd = other._epollfd;
+	_event = other._event;
+	for (int i = 0; i < 10; i++)
+		_events[i] = other._events[i];
+
+	return (*this);
+}
+
+const std::string &Socket::getHost() const
+{
+	return (_host);
+}
+
+const std::string &Socket::getPort() const
+{
+	return (_port);
+}
+
+void Socket::addServer(VirtualServer vserv)
+{
+	_servers.push_back(vserv);
+}
+
+void Socket::display()
+{
+	std::cout << "----- SOCKET -----" << std::endl;
+	std::cout << "Host: " << _host << std::endl;
+	std::cout << "Port: " << _port << std::endl;
+	std::cout << std::endl;
+	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	{
+		it->display();
+		std::cout << std::endl;
 	}
 }
 
@@ -90,10 +142,26 @@ std::string read_request(int connfd)
 	return (buffer);
 }
 
-void	answer_request(const std::string &request, int connfd)
+void	Socket::answer_request(const std::string &request, int connfd)
 {
-	VirtualServer virtual_serv;
-	std::string full_request = virtual_serv.answer_request(request);
+	//VirtualServer virtual_serv;
+	bool answered = false;
+	std::string full_request;
+	std::string server_name = split(split(request, ' ')[3], '\r')[0];
+	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	{
+		if (server_name == it->getServerName())
+		{
+			full_request = it->answer_request(request);
+			answered = true;
+			break;
+		}
+		//it->display();
+		//std::cout << std::endl;
+	}
+	if (!answered)
+		full_request = _servers[0].answer_request(request);
+	//std::string full_request = virtual_serv.answer_request(request);
 	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
 	if (size_send == -1)
 		throw std::exception();
@@ -101,10 +169,10 @@ void	answer_request(const std::string &request, int connfd)
 	close(connfd);
 }
 
-void TcpListener::http_listen()
+void Socket::http_listen()
 {
 		int connfd;
-		int fd_amount = epoll_wait(_epoll_fd, _events, 10, 0);
+		int fd_amount = epoll_wait(_epollfd, _events, 10, 0);
 		if (fd_amount == -1)
 		{
 			std::cerr << "epoll_wait failed" << std::endl;
@@ -112,9 +180,9 @@ void TcpListener::http_listen()
 		}
 		for (int n = 0; n < fd_amount; n++)
 		{
-			if (_events[n].data.fd == _sock_fd)
+			if (_events[n].data.fd == _sockfd)
 			{
-				connfd = accept_connection(_sock_fd);
+				connfd = accept_connection(_sockfd);
 				if (connfd == -1)
 				{
 					std::cerr << "accept connection failed" << std::endl;
@@ -124,7 +192,7 @@ void TcpListener::http_listen()
 				//fcntl(connfd, F_SETFL, O_NONBLOCK);
 				_event.events = EPOLLIN | EPOLLET;
 				_event.data.fd = connfd;
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, connfd, &_event) == -1)
+				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 				{
 					std::cerr << "epoll ctl failed" << std::endl;
 					throw std::exception();
@@ -134,7 +202,7 @@ void TcpListener::http_listen()
 			{
 				std::string request = read_request(_events[n].data.fd);
 				if (!request.empty())
-					answer_request(request, _events[n].data.fd);
+					this->answer_request(request, _events[n].data.fd);
 			}
 		}
 }

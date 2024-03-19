@@ -10,7 +10,7 @@
 #include <cstdlib>
 
 #include "VirtualServer.hpp"
-#include "TcpListener.hpp"
+#include "Socket.hpp"
 #include "WebServ.hpp"
 
 #include <sys/socket.h>

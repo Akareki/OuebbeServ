@@ -1,24 +1,60 @@
-CC=c++
-CFLAGS=-Wall -Wextra -Werror -std=c++98
-NAME=webserv
-HEADER=webh.hpp VirtualServer.hpp TcpListener.hpp WebServ.hpp
-SRCS= ./main.cpp ./VirtualServer.cpp ./TcpListener.cpp ./utils.cpp ./WebServ.cpp
-OBJS= $(SRCS:.cpp=.o)
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
+#    Updated: 2024/03/18 14:32:00 by aoizel           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-all: $(NAME)
 
-$(NAME): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+NAME			=	webserv
 
-%.o: %.cpp $(HEADER)
-	$(CC) $(CFLAGS) -c $< -o $@
+RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp
+
+SOURCES_DIR		=	srcs/
+
+SOURCES			=	$(addprefix $(SOURCES_DIR), $(RAW_SOURCES))
+
+INCLUDES_DIR	=	includes/
+
+CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98
+
+CPP				=	$(CXX) $(CPP_FLAGS)
+
+OBJECTS_DIR		=	.objs/
+
+OBJECTS			=	$(addprefix $(OBJECTS_DIR),$(RAW_SOURCES:.cpp=.o))
+
+DEPENDENCIES	=	Makefile
+
+all:				$(OBJECTS_DIR)
+						make $(NAME)
+
+$(NAME):			$(OBJECTS_DIR) $(OBJECTS)
+						$(CPP) $(OBJECTS) -o $@
+
+$(OBJECTS_DIR):
+					mkdir -p .objs/
+
+$(OBJECTS_DIR)%.o:	$(SOURCES_DIR)%.cpp $(DEPENDENCIES)
+						$(CPP) -c $< -I$(INCLUDES_DIR) -o $@
+
+$(OBJECTS_DIR)%.d: %.cpp | $(OBJECTS_DIR)
+						$(CPP) $< -MT -I$(INCLUDES_DIR) $(OBJECTS_DIR)$(<:.cpp=.o) -MM -MP -MF $@
 
 clean:
-	rm -f $(OBJS)
+						rm -rf $(OBJECTS_DIR)
 
-fclean: clean
-	rm -f $(NAME)
+fclean:				clean
+						rm -rf $(NAME)
 
-re: fclean all
+re:					fclean
+						make all
 
-.PHONY: clean fclean all re
+.PHONY:				all clean fclean re
+
+-include $(OBJECTS:.o=.d)
