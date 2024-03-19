@@ -22,12 +22,6 @@ int	initialize(const std::string &host, int port)
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(port);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-	/*
-	char *buff = "ouais";
-	setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt));
-	*/
-
 	//network funcs
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
@@ -135,8 +129,7 @@ std::string read_request(int connfd)
 	{
 		std::cerr << "read failed" << std::endl;
 		close(connfd);
-		return ("");
-		//throw std::exception();
+		throw std::exception();
 	}
 	buffer[len_read] = '\0';
 	return (buffer);
@@ -144,29 +137,19 @@ std::string read_request(int connfd)
 
 void	Socket::answer_request(const std::string &request, int connfd)
 {
-	//VirtualServer virtual_serv;
 	bool answered = false;
-	std::string full_request;
 	std::string server_name = split(split(request, ' ')[3], '\r')[0];
 	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (server_name == it->getServerName())
 		{
-			full_request = it->answer_request(request);
+			it->answer_request(request, connfd);
 			answered = true;
 			break;
 		}
-		//it->display();
-		//std::cout << std::endl;
 	}
 	if (!answered)
-		full_request = _servers[0].answer_request(request);
-	//std::string full_request = virtual_serv.answer_request(request);
-	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
-	if (size_send == -1)
-		throw std::exception();
-	std::cout << "size_send : " << size_send << std::endl;
-	close(connfd);
+		_servers[0].answer_request(request, connfd);
 }
 
 void Socket::http_listen()
@@ -201,8 +184,7 @@ void Socket::http_listen()
 			else
 			{
 				std::string request = read_request(_events[n].data.fd);
-				if (!request.empty())
-					this->answer_request(request, _events[n].data.fd);
+				this->answer_request(request, _events[n].data.fd);
 			}
 		}
 }

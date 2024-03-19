@@ -44,7 +44,7 @@ public:
 	static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 	void display() const;
 	std::string			parse_request(const std::string &request);
-	std::string	answer_request(const std::string &request);
+	void				answer_request(const std::string &request, int connfd);
 private:
 	std::string _host;
 	std::string _port;

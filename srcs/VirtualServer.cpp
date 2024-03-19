@@ -229,7 +229,7 @@ std::string directory_listing(const std::string &directory)
 	return html_body;
 }
 
-std::string	VirtualServer::answer_request(const std::string &request)
+void	VirtualServer::answer_request(const std::string &request, int connfd)
 {
 	std::string full_path = this->parse_request(request);
 
@@ -245,13 +245,26 @@ std::string	VirtualServer::answer_request(const std::string &request)
 	}
 	//body = directory_listing(_root_path + _index_file);
 	std::string full_request = "HTTP/1.1 200 OK\r\nServer: webserv\r\n\r\n" + body;
-	return full_request;
+	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
+	if (size_send == -1)
+		throw std::exception();
+	std::cout << "size_send : " << size_send << std::endl;
+	close(connfd);
 }
+
+/*void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > headers)
+{
+
+}*/
 
 std::string VirtualServer::parse_request(const std::string &request)
 {
 	if (DEBUG_MODE == 1)
 		std::cout << request << std::endl;
+	std::map<std::string, std::vector<std::string> > headers;
+
+	//fill_map(request, headers);
+
 	std::vector<std::string> request_vector = split(request, ' ');
 
 	std::string full_request(_root + request_vector[1]);
