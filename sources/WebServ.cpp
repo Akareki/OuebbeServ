@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:53:37 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/18 14:41:13 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 11:23:17 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+unsigned int line_nb = 0;
 
 static std::vector<Socket>::iterator findSocket(std::vector<Socket>::iterator begin, std::vector<Socket>::iterator end, VirtualServer &vserv)
 {
@@ -41,6 +43,7 @@ WebServ::WebServ(const std::string &config_file)
 		throw WebServException("Can't open config file");
 	while (1)
 	{
+		line_nb++;
 		std::getline(config, line);
 		if (!config)
 			break;

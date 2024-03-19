@@ -6,20 +6,16 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/18 14:35:51 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 11:28:52 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/VirtualServer.hpp"
-#include <asm-generic/errno-base.h>
-#include <cerrno>
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <sstream>
+#include <ostream>
 #include <string>
-
-unsigned int line_nb = 1;
+#include <utility>
+#include <vector>
 
 const std::string VirtualServer::optNames[OPTNB]
 	= {"host", "listen", "server_name", "root",
@@ -46,20 +42,26 @@ VirtualServer::VirtualServer(std::ifstream &config):
 
 	while (1)
 	{
+		line_nb++;
 		std::getline(config, line);
-		if (line == "}")
-			break;
 		if (!config)
 			throw VirtualServerException("unexpected end of file.", line_nb);
-		if (line.find_first_not_of(WS) == std::string::npos)
-			continue;
 		line.erase(0, line.find_first_not_of(WS));
+		if (line == "}")
+			break;
 		if (line.find(" ") == std::string::npos || line.find(" ") == line.size() - 1)
 			throw VirtualServerException("format error.");
+		if (line.find_first_not_of(WS) == std::string::npos)
+			continue;
 		opt_name = line.substr(0, line.find(" "));
 		opt_value = line.substr(line.find(" ") + 1);
-		setOpt(opt_name, opt_value);
-		line_nb++;
+		if (opt_name == "location")
+		{
+			Location loc(config);
+			addLocation(opt_value, loc);
+		}
+		else
+			setOpt(opt_name, opt_value);
 	}
 }
 
@@ -159,6 +161,15 @@ void VirtualServer::setOpt(const std::string &opt_name, const std::string &opt_v
 	throw VirtualServerException("invalid option");	
 }
 
+void VirtualServer::addLocation(std::string opt_name, Location &loc)
+{
+	if (opt_name.substr(opt_name.find(" {"), std::string::npos) != " {")
+		throw VirtualServerException("bad format");
+	opt_name.erase(opt_name.find(" "), std::string::npos);
+	if (_locations.insert(std::pair<std::string, Location>(opt_name, loc)).second == false)
+		throw VirtualServerException("duplicate location.");
+}
+
 VirtualServer::~VirtualServer()
 {
 }
@@ -206,8 +217,9 @@ const char *VirtualServer::VirtualServerException::what() const throw()
 VirtualServer::VirtualServerException::~VirtualServerException() throw()
 {}
 
-void VirtualServer::display() const
+void VirtualServer::display()
 {
+	std::cout << "---- SERVER ----" << std::endl;
 	std::cout << "Host: " << _host << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Server name: " << _server_name << std::endl;
@@ -215,4 +227,11 @@ void VirtualServer::display() const
 	std::cout << "Index: " << _index << std::endl;
 	std::cout << "Autoindex: " << _autoindex << std::endl;
 	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
+	std::cout << std::endl;
+	for (std::map<std::string,Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
+	{
+		std::cout << "-> LOCATION: " << it->first << std::endl;
+		it->second.display();
+	std::cout << std::endl;
+	}
 }

@@ -6,19 +6,23 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/18 14:30:56 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 11:04:17 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef VIRTUALSERVER_HPP
 # define VIRTUALSERVER_HPP
-#define WS " \t\r\n"
-#define OPTNB 10
 #include "Location.hpp"
+#include "defines.hpp"
 #include <exception>
 #include <fstream>
 #include <map>
 #include <string>
+#include <asm-generic/errno-base.h>
+#include <cerrno>
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
 
 class VirtualServer
 {
@@ -43,6 +47,7 @@ class VirtualServer
 		void setIndex(const std::string &);
 		void setAutoindex(const std::string &);
 		void setClientMaxBodySize(const std::string &);
+		void addLocation(std::string, Location &);
 		class VirtualServerException: public std::exception
 		{
 			public:
@@ -55,7 +60,7 @@ class VirtualServer
 		};
 		const static std::string optNames[OPTNB];
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
-		void display() const;
+		void display();
 	private:
 		std::string _host;
 		std::string _port;
