@@ -6,29 +6,25 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/18 13:28:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/18 14:26:50 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 13:57:30 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/VirtualServer.hpp"
 #include "../includes/WebServ.hpp"
+#include "../includes/HTTPMessage.hpp"
 #include <fstream>
 #include <iostream>
 
 int	main(int argc, char **argv)
 {
-	std::ifstream config;
+	int i = 1;
+	HTTPMessage http("404 not found", "this is an http body");
 
-	if (argc != 2)
-		return (1);
-	config.open(argv[1]);
-	try
+	while (i < argc - 1)
 	{
-		WebServ ws(argv[1]);
-		ws.display();
+		http.addHeader(argv[i], argv[i + 1]);
+		i += 2;
 	}
-	catch (std::exception &ex)
-	{
-		std::cout << ex.what() << std::endl;
-	}
+	std::cout << http.getMessage() << std::endl;
 }

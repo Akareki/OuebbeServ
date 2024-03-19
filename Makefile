@@ -6,14 +6,14 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/03/18 15:34:17 by aoizel           ###   ########.fr        #
+#    Updated: 2024/03/19 13:54:30 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME			=	webserv
 
-RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp
+RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp HTTPMessage.cpp
 
 SOURCES_DIR		=	sources/
 
