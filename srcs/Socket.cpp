@@ -134,35 +134,18 @@ std::string read_request(int connfd)
 	buffer[len_read] = '\0';
 	return (buffer);
 }
-void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > &headers)
-{
-	std::string line;
-	std::istringstream request_stream(request);
-	std::getline(request_stream, line, '\n');
-	while (std::getline(request_stream, line, '\n'))
-	{
-		if (line.find(':') == std::string::npos)
-			continue ;
-		std::string first_half = line.substr(0, line.find(':'));
-		if (line.find(' ') == std::string::npos || line.find('\r') == std::string::npos)
-			continue ;
-		std::string second_half = line.substr(line.find(' ') + 1, line.find('\r') - 6);
-		headers[first_half].push_back(second_half);
-	}
-}
 
 void	Socket::answer_request(const std::string &request, int connfd)
 {
-	std::map<std::string, std::vector<std::string> > request_headers;
-	fill_map(request, request_headers);
+	HTTPMessage http_request(request);
 
 	bool answered = false;
-	std::string server_name = request_headers["Host"][0];
+	std::string server_name = http_request.getHeaders()["Host"][0];
 	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (server_name == it->getServerName())
 		{
-			it->answer_request(request, connfd);
+			it->answer_request(http_request, connfd);
 			answered = true;
 			break;
 		}

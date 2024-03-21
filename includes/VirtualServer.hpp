@@ -3,7 +3,9 @@
 
 #include "webh.hpp"
 #include "Location.hpp"
+#include "HTTPMessage.hpp"
 
+class HTTPMessage;
 
 #define WS " \t\r\n"
 #define OPTNB 10
@@ -43,8 +45,8 @@ public:
 	const static std::string optNames[OPTNB];
 	static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 	void display() const;
-	std::string			parse_request(const std::string &request);
-	void				answer_request(const std::string &request, int connfd);
+	std::string			get_full_path(const HTTPMessage &http_request);
+	void				answer_request(const HTTPMessage &http_request, int connfd);
 private:
 	std::string _host;
 	std::string _port;

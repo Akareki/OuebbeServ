@@ -198,7 +198,6 @@ void VirtualServer::display() const
 	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
 }
 
-
 std::string directory_listing(const std::string &directory)
 {
 	std::string html_body = "<html><body><ul>";
@@ -229,14 +228,13 @@ std::string directory_listing(const std::string &directory)
 	return html_body;
 }
 
-void	VirtualServer::answer_request(const std::string &request, int connfd)
+void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 {
-	std::string full_path = this->parse_request(request);
+	std::string full_path = this->get_full_path(http_request);
 
 	std::cout << "full_path : " << full_path << std::endl;
-	std::vector<std::string> request_vector = split(request, ' ');
 	std::string body;
-	if (request_vector[0] == "GET")
+	if (http_request.getMethod() == "GET")
 	{
 		std::ifstream file1(full_path.c_str());
 		if (file1)
@@ -245,40 +243,27 @@ void	VirtualServer::answer_request(const std::string &request, int connfd)
 			body_buffer << file1.rdbuf();
 			body = body_buffer.str();
 		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && request_vector[1] == "/")))
+		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && http_request.getPath() == "/")))
 			body = directory_listing(_root);
 	}
-	std::string full_request = "HTTP/1.1 200 OK\r\nServer: webserv\r\n\r\n" + body;
-	ssize_t size_send = send(connfd, full_request.c_str(), full_request.length(), MSG_CONFIRM);
+	HTTPMessage http_response("200", body);
+	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)
 		throw std::exception();
 	std::cout << "size_send : " << size_send << std::endl;
 	close(connfd);
 }
 
-std::string VirtualServer::parse_request(const std::string &request)
+std::string VirtualServer::get_full_path(const HTTPMessage &http_request)
 {
 	if (DEBUG_MODE == 1)
-		std::cout << request << std::endl;
+		std::cout << http_request.getMessage() << std::endl;
 
-	std::vector<std::string> request_vector = split(request, ' ');
-
-	std::string full_request(_root + request_vector[1]);
-
-	if (full_request[full_request.length() - 1] == '/')
+	std::string full_path(_root + http_request.getPath());
+	if (full_path[full_path.length() - 1] == '/')
 	{
-		full_request += _index;
+		full_path += _index;
 		_isindexadded = true;
 	}
-
-	return (full_request);
-
-
-	//set default rootpath
-	/*if (_root.empty())
-		_root = "public_html";
-	if (_root.empty() || _root == "/")
-		_root = "/index.html";*/
-
-	//std::cout << request_vector[1] << std::endl;
+	return (full_path);
 }
