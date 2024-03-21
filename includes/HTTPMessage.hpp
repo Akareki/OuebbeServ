@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 11:39:11 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 13:41:16 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 15:26:17 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,11 @@ class HTTPMessage
 		HTTPMessage(const HTTPMessage&);
 		~HTTPMessage();
 		HTTPMessage &operator=(const HTTPMessage&);
+		void setStatus(const std::string &);
+		void setBody(const std::string &);
+		const std::string &getMethod() const;
+		const std::string &getBody() const;
+		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 		void addHeader(const std::string &, const std::string &);
 		std::string getMessage();
 		class HTTPMessageException: public std::exception

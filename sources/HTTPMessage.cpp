@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 14:00:40 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/19 15:22:21 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-HTTPMessage::HTTPMessage()
+HTTPMessage::HTTPMessage(): _http_version("HTTP/1.1")
 {
 }
 
