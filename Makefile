@@ -6,16 +6,16 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/03/21 08:52:26 by aoizel           ###   ########.fr        #
+#    Updated: 2024/03/21 08:56:19 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME			=	webserv
 
-RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp HTTPMessage.cpp
+RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp HTTPMessage.cpp
 
-SOURCES_DIR		=	sources/
+SOURCES_DIR		=	srcs/
 
 SOURCES			=	$(addprefix $(SOURCES_DIR), $(RAW_SOURCES))
 
@@ -23,7 +23,7 @@ INCLUDES_DIR	=	includes/
 
 CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98
 
-CPP				=	c++ $(CPP_FLAGS)
+CPP				=	$(CXX) $(CPP_FLAGS)
 
 OBJECTS_DIR		=	.objs/
 
@@ -56,3 +56,5 @@ re:					fclean
 						make all
 
 .PHONY:				all clean fclean re
+
+-include $(OBJECTS:.o=.d)

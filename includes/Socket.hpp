@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 10:13:18 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:04:49 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,11 @@
 #include "defines.hpp"
 #include <exception>
 #include <string>
+#include <sys/epoll.h>
 #include <vector>
 
-class Socket
-{
+class Socket {
 	public:
-		Socket();
 		Socket(const Socket&);
 		Socket(const std::string &, const std::string &);
 		~Socket();
@@ -34,11 +33,18 @@ class Socket
 			virtual const char *what() const throw();
 		};
 		void display();
+		void	http_listen();
+		void	parse_request(const std::string &request);
+		void	answer_request(const std::string &request, int connfd);
 	private:
-		int _sockfd;
+		Socket();
+		int 	_epollfd;
+		int 	_sockfd;
 		std::string _host;
 		std::string _port;
 		std::vector<VirtualServer> _servers;
+		struct epoll_event _event;
+		struct epoll_event _events[10];
 };
 
-#endif
+#endif //WEBSERV_TCPLISTENER_HPP

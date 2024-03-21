@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 11:04:17 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:03:20 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define VIRTUALSERVER_HPP
 #include "Location.hpp"
 #include "defines.hpp"
+#include "HTTPMessage.hpp"
 #include <exception>
 #include <fstream>
 #include <map>
@@ -24,8 +25,7 @@
 #include <iostream>
 #include <sstream>
 
-class VirtualServer
-{
+class VirtualServer {
 	public:
 		VirtualServer();
 		VirtualServer(std::ifstream &);
@@ -47,30 +47,33 @@ class VirtualServer
 		void setIndex(const std::string &);
 		void setAutoindex(const std::string &);
 		void setClientMaxBodySize(const std::string &);
-		void addLocation(std::string, Location &);
 		class VirtualServerException: public std::exception
 		{
-			public:
-				virtual const char *what() const throw();
-				VirtualServerException(const std::string &);
-				VirtualServerException(const std::string &, int);
-				~VirtualServerException() throw();
-			private:
-				std::string _msg;
+		public:
+			virtual const char *what() const throw();
+			VirtualServerException(const std::string &);
+			VirtualServerException(const std::string &, int);
+			~VirtualServerException() throw();
+		private:
+			std::string _msg;
 		};
 		const static std::string optNames[OPTNB];
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
-		void display();
+		void display() const;
+		std::string			get_full_path(const HTTPMessage &http_request);
+		void				answer_request(const HTTPMessage &http_request, int connfd);
 	private:
 		std::string _host;
 		std::string _port;
 		std::string _server_name;
 		std::string _root;
 		std::string _index;
+		bool		_isindexadded;
 		bool _autoindex;
 		unsigned int _client_max_body_size;
 		std::map<int, std::string> _error_pages;
 		std::map<std::string, Location> _locations;
 };
 
-#endif
+
+#endif //WEBSERV_SERVER_HPP

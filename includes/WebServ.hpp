@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:37:37 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/18 14:27:22 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:05:58 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,11 @@
 #include <string>
 #include <vector>
 
-class WebServ
-{
+class WebServ {
 	public:
 		WebServ(const std::string &);
 		~WebServ();
+		void	start();
 		void display();
 		class WebServException: public std::exception
 		{
@@ -40,4 +40,5 @@ class WebServ
 		bool _running;
 };
 
-#endif
+
+#endif //WEBSERV_WEBSERV_HPP

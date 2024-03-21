@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 11:39:11 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 15:26:17 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 08:58:45 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ class HTTPMessage
 		HTTPMessage();
 		std::string _http_version;
 		std::string _method;
-		std::string _target;
+		std::string _path;
 		std::string _status;
 		std::map<std::string, std::vector<std::string> > _headers;
 		std::string _body;
