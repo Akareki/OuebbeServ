@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:41:59 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 10:54:17 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders(
 }
 
 HTTPMessage::HTTPMessage(const std::string &status, const std::string &response_body):
-	_http_version("HTTP/1.1"), _status(status), _body(response_body) //response constructor
+	_http_version("HTTP/1.1"), _status(status), _body(response_body)
 {
 }
 
@@ -112,4 +112,14 @@ const std::string &HTTPMessage::getMethod() const
 const std::string &HTTPMessage::getPath() const
 {
 	return _path;
+}
+
+void HTTPMessage::setStatus(const std::string &status)
+{
+	_status = status;
+}
+
+void HTTPMessage::setBody(const std::string &body)
+{
+	_body = body;
 }

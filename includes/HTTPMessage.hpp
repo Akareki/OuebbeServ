@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 11:39:11 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:41:30 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 10:53:40 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <map>
 #include <string>
 #include <vector>
+
 class HTTPMessage
 {
 	public:
@@ -25,12 +26,12 @@ class HTTPMessage
 		HTTPMessage(const HTTPMessage&);
 		~HTTPMessage();
 		HTTPMessage &operator=(const HTTPMessage&);
-		void setStatus(const std::string &);
-		void setBody(const std::string &);
 		const std::string &getMethod() const;
 		const std::string &getBody() const;
 		const std::string &getPath() const;
 		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
+		void setStatus(const std::string &);
+		void setBody(const std::string &);
 		void addHeader(const std::string &, const std::string &);
 		std::string getMessage() const;
 		class HTTPMessageException: public std::exception
