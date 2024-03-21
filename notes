@@ -1,9 +1,10 @@
 à faire:
 
--gérer les requests POST et DELETE
 -gérer les différents code d'erreur et de réussite
--gérer les locaiton
+-gérer les location
+-gérer les redirections
+-gérer client max body size
 
--gérer le host dans le fichier de conf
+-gérer le host (127.0.0.1 par exemple) dans le fichier de conf
 
 -faire les CGI

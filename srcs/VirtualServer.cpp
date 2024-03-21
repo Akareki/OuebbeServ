@@ -13,13 +13,13 @@ void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 
 VirtualServer::VirtualServer() :
 		_host("127.0.0.1"), _port("8080"), _server_name(), _root("public_html"),
-		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
 		_host("127.0.0.1"), _port("8080"), _server_name(), _root(),
-		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
 {
 	std::string line;
 	std::string opt_name;
@@ -230,8 +230,8 @@ std::string directory_listing(const std::string &directory)
 
 void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 {
-	std::string full_path = this->get_full_path(http_request);
-
+	bool isindexadded = false;
+	std::string full_path = this->get_full_path(http_request, isindexadded);
 	std::cout << "full_path : " << full_path << std::endl;
 	std::string body;
 	if (http_request.getMethod() == "GET")
@@ -243,7 +243,7 @@ void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 			body_buffer << file1.rdbuf();
 			body = body_buffer.str();
 		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && http_request.getPath() == "/")))
+		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
 			body = directory_listing(_root);
 	}
 	else if (http_request.getMethod() == "POST")
@@ -265,7 +265,7 @@ void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 		if (remove(("database" + http_request.getPath()).c_str()) != 0)
 			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
 	}
-	HTTPMessage http_response("200", body);
+	HTTPMessage http_response("200 OK", body);
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)
 		throw std::exception();
@@ -273,7 +273,7 @@ void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 	close(connfd);
 }
 
-std::string VirtualServer::get_full_path(const HTTPMessage &http_request)
+std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
 {
 	if (DEBUG_MODE == 1)
 		std::cout << http_request.getMessage() << std::endl;
@@ -282,7 +282,7 @@ std::string VirtualServer::get_full_path(const HTTPMessage &http_request)
 	if (full_path[full_path.length() - 1] == '/')
 	{
 		full_path += _index;
-		_isindexadded = true;
+		isindexadded = true;
 	}
 	return (full_path);
 }
