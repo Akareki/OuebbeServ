@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 11:39:11 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 08:58:45 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:41:30 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,10 @@ class HTTPMessage
 		void setBody(const std::string &);
 		const std::string &getMethod() const;
 		const std::string &getBody() const;
+		const std::string &getPath() const;
 		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 		void addHeader(const std::string &, const std::string &);
-		std::string getMessage();
+		std::string getMessage() const;
 		class HTTPMessageException: public std::exception
 		{
 			virtual const char *what() const throw();

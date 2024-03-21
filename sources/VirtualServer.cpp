@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 11:28:52 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:10:50 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -161,7 +161,7 @@ void VirtualServer::setOpt(const std::string &opt_name, const std::string &opt_v
 	throw VirtualServerException("invalid option");	
 }
 
-void VirtualServer::addLocation(std::string opt_name, Location &loc)
+void VirtualServer::addLocation(std::string &opt_name, Location &loc)
 {
 	if (opt_name.substr(opt_name.find(" {"), std::string::npos) != " {")
 		throw VirtualServerException("bad format");

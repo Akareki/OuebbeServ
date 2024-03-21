@@ -6,11 +6,12 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 14:00:40 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:41:59 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/HTTPMessage.hpp"
+#include <sstream>
 #define CRLF "\r\n"
 #include <map>
 #include <string>
@@ -39,24 +40,17 @@ HTTPMessage::HTTPMessage()
 
 HTTPMessage::HTTPMessage(const std::string &request)
 {
-	//parse first line with path and method
 	std::string line;
 	std::istringstream request_stream(request);
 	std::getline(request_stream, line, '\n');
-
 	std::vector<std::string> first_line = split(line, ' ');
 
 	_method = first_line[0];
 	_path = first_line[1];
-
-	//parse headers
 	fill_map(request, _headers);
-
-	//parse body (POST requests usually have a body)
-
 }
 
-std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders()
+const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders() const
 {
 	return _headers;
 }

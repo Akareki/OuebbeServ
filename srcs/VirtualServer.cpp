@@ -1,4 +1,19 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   VirtualServer.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/21 09:46:04 by aoizel            #+#    #+#             */
+/*   Updated: 2024/03/21 09:46:24 by aoizel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../includes/VirtualServer.hpp"
+#include <dirent.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 unsigned int line_nb = 1;
 
@@ -187,7 +202,7 @@ const char *VirtualServer::VirtualServerException::what() const throw()
 VirtualServer::VirtualServerException::~VirtualServerException() throw()
 {}
 
-void VirtualServer::display() const
+void VirtualServer::display()
 {
 	std::cout << "Host: " << _host << std::endl;
 	std::cout << "Port: " << _port << std::endl;

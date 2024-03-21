@@ -3,6 +3,10 @@
 //
 
 #include "../includes/Socket.hpp"
+#include <cstring>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
 int	initialize(const std::string &host, int port)
 {
@@ -140,7 +144,7 @@ void	Socket::answer_request(const std::string &request, int connfd)
 	HTTPMessage http_request(request);
 
 	bool answered = false;
-	std::string server_name = http_request.getHeaders()["Host"][0];
+	std::string server_name = http_request.getHeaders().at("Host")[0];
 	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (server_name == it->getServerName())
@@ -173,8 +177,6 @@ void Socket::http_listen()
 					std::cerr << "accept connection failed" << std::endl;
 					throw std::exception();
 				}
-				//todo : set non blocking
-				//fcntl(connfd, F_SETFL, O_NONBLOCK);
 				_event.events = EPOLLIN | EPOLLET;
 				_event.data.fd = connfd;
 				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)

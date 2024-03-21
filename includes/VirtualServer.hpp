@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:03:20 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:11:11 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class VirtualServer {
 		void setIndex(const std::string &);
 		void setAutoindex(const std::string &);
 		void setClientMaxBodySize(const std::string &);
+		void addLocation(std::string &, Location &);
 		class VirtualServerException: public std::exception
 		{
 		public:
@@ -59,7 +60,7 @@ class VirtualServer {
 		};
 		const static std::string optNames[OPTNB];
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
-		void display() const;
+		void display();
 		std::string			get_full_path(const HTTPMessage &http_request);
 		void				answer_request(const HTTPMessage &http_request, int connfd);
 	private:

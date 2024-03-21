@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 15:22:21 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/21 09:47:21 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ HTTPMessage &HTTPMessage::operator=(const HTTPMessage &other)
 		return (*this);
 	_http_version = other._http_version;
 	_method = other._method;
-	_target = other._target;
+	_path = other._path;
 	_status = other._status;
 	_headers = other._headers;
 	_body = other._body;
@@ -51,14 +51,14 @@ void HTTPMessage::addHeader(const std::string &key, const std::string &value)
 	_headers[key].push_back(value);
 }
 
-std::string HTTPMessage::getMessage()
+std::string HTTPMessage::getMessage() const
 {
 	std::string msg;
 
 	msg += _http_version + " " + _status + CRLF;
-	for (std::map<std::string, std::vector<std::string> >::iterator it = _headers.begin(); it != _headers.end(); it++)
+	for (std::map<std::string, std::vector<std::string> >::const_iterator it = _headers.begin(); it != _headers.end(); it++)
 	{
-		for (std::vector<std::string>::iterator vit = it->second.begin(); vit != it->second.end(); vit++)
+		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
 			msg += it->first + ": " + *vit + CRLF;
 		}
