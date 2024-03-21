@@ -1,0 +1,2 @@
+-Socket différent uniquement quand port différent
+-utiliser epoll pour gérer beaucoup de clients qui se connectent en même temps, ainsi que la connexion à plusieurs ports

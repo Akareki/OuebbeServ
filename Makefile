@@ -6,7 +6,7 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/03/19 13:54:30 by aoizel           ###   ########.fr        #
+#    Updated: 2024/03/21 08:52:26 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -56,5 +56,3 @@ re:					fclean
 						make all
 
 .PHONY:				all clean fclean re
-
--include $(OBJECTS:.o=.d)
