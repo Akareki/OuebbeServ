@@ -140,7 +140,7 @@ void	Socket::answer_request(const std::string &request, int connfd)
 	HTTPMessage http_request(request);
 
 	bool answered = false;
-	std::string server_name = http_request.getHeaders()["Host"][0];
+	std::string server_name = http_request.getHeaders().at("Host")[0];
 	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (server_name == it->getServerName())

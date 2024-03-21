@@ -246,6 +246,25 @@ void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && http_request.getPath() == "/")))
 			body = directory_listing(_root);
 	}
+	else if (http_request.getMethod() == "POST")
+	{
+		int number = 0;
+		while (access(("database/file" + cpp_itoa(number)).c_str(), F_OK) == 0)
+			number++;
+		std::ofstream file(("database/file" + cpp_itoa(number)).c_str());
+		if (file)
+		{
+			std::stringstream body_buffer;
+			body_buffer << http_request.getBody();
+			file << body_buffer.str();
+		}
+		std::cout << "GET BODY : " << http_request.getBody() << std::endl;
+	}
+	else if (http_request.getMethod() == "DELETE")
+	{
+		if (remove(("database" + http_request.getPath()).c_str()) != 0)
+			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
+	}
 	HTTPMessage http_response("200", body);
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)

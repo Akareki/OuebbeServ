@@ -1,2 +1,9 @@
--Socket différent uniquement quand port différent
--utiliser epoll pour gérer beaucoup de clients qui se connectent en même temps, ainsi que la connexion à plusieurs ports
+à faire:
+
+-gérer les requests POST et DELETE
+-gérer les différents code d'erreur et de réussite
+-gérer les locaiton
+
+-gérer le host dans le fichier de conf
+
+-faire les CGI

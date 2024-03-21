@@ -30,7 +30,8 @@ class HTTPMessage
 		std::string getMessage() const;
 		const std::string &getMethod() const;
 		const std::string &getPath() const;
-		std::map<std::string, std::vector<std::string> > &getHeaders();
+		const std::string &getBody() const;
+		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 		class HTTPMessageException: public std::exception
 		{
 			virtual const char *what() const throw();

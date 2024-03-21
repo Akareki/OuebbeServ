@@ -53,10 +53,10 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	fill_map(request, _headers);
 
 	//parse body (POST requests usually have a body)
-
+	_body = split(request, "\r\n\r\n")[1];
 }
 
-std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders()
+const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders() const
 {
 	return _headers;
 }
@@ -108,6 +108,11 @@ std::string HTTPMessage::getMessage() const
 	msg += CRLF;
 	msg += _body;
 	return (msg);
+}
+
+const std::string &HTTPMessage::getBody() const
+{
+	return _body;
 }
 
 const std::string &HTTPMessage::getMethod() const
