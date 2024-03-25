@@ -22,8 +22,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 
-#define DEBUG_MODE 1
-
 std::vector<std::string> split(const std::string &str, char delimiter);
 std::vector<std::string> split(const std::string &str, const std::string &delimiter);
 std::string cpp_itoa(int number);

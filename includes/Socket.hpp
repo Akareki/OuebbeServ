@@ -4,6 +4,7 @@
 
 #include "webh.hpp"
 #include <iostream>
+#include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <cstdlib>
 #include "VirtualServer.hpp"

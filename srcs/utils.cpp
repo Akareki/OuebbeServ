@@ -23,7 +23,6 @@ std::vector<std::string> split(const std::string &str, const std::string &delimi
 		start = end + delimiter.length();
 		end = str.find(delimiter, start);
 	}
-
 	tokens.push_back(str.substr(start, end));
 	return tokens;
 }

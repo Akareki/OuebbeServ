@@ -17,9 +17,10 @@ int	initialize(const std::string &host, int port)
 	//initialize structure
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	//todo : maybe replace INADDR_ANY by host
-	(void)host;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	if (host.empty())
+		serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	else
+		serv_addr.sin_addr.s_addr = inet_addr(host.c_str());
 	serv_addr.sin_port = htons(port);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	//network funcs
@@ -151,7 +152,7 @@ void	Socket::answer_request(const std::string &request, int connfd)
 		}
 	}
 	if (!answered)
-		_servers[0].answer_request(request, connfd);
+		_servers[0].answer_request(http_request, connfd);
 }
 
 void Socket::http_listen()

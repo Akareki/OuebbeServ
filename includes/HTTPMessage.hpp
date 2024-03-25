@@ -18,9 +18,11 @@
 #include <string>
 #include <vector>
 #include "webh.hpp"
+
 class HTTPMessage
 {
 	public:
+		HTTPMessage();
 		HTTPMessage(const std::string &request);
 		HTTPMessage(const std::string &status, const std::string &response_body);
 		HTTPMessage(const HTTPMessage&);
@@ -32,12 +34,13 @@ class HTTPMessage
 		const std::string &getPath() const;
 		const std::string &getBody() const;
 		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
+		void setStatus(const std::string &status);
+		void setBody(const std::string &body);
 		class HTTPMessageException: public std::exception
 		{
 			virtual const char *what() const throw();
 		};
 	private:
-		HTTPMessage();
 		std::string _http_version;
 		std::string _method;
 		std::string _path;

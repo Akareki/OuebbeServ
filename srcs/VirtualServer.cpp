@@ -12,13 +12,13 @@ void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 		 &VirtualServer::setClientMaxBodySize};
 
 VirtualServer::VirtualServer() :
-		_host("127.0.0.1"), _port("8080"), _server_name(), _root("public_html"),
+		_host(""), _port("8080"), _server_name(), _root("public_html"),
 		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
-		_host("127.0.0.1"), _port("8080"), _server_name(), _root(),
+		_host(""), _port("8080"), _server_name(), _root(),
 		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
 {
 	std::string line;
@@ -198,7 +198,7 @@ void VirtualServer::display() const
 	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
 }
 
-std::string directory_listing(const std::string &directory)
+/*std::string directory_listing(const std::string &directory)
 {
 	std::string html_body = "<html><body><ul>";
  	DIR *dir = opendir(directory.c_str());
@@ -226,25 +226,71 @@ std::string directory_listing(const std::string &directory)
 	html_body += "</ul></body><html>";
 	closedir(dir);
 	return html_body;
-}
+}*/
 
-void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
+void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 {
-	bool isindexadded = false;
+	//Location location;
+
+	for (std::map<std::string, Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
+	{
+		if (it->first == http_request.getPath()) //TODO : replace with a function that checks if the path matches.
+		{
+			_locations[it->first].answer_request(http_request, connfd);
+			break ;
+		}
+	}
+	_locations["/"].answer_request(http_request, connfd);
+	//location.answer_request(http_request, connfd);
+	/*bool isindexadded = false;
 	std::string full_path = this->get_full_path(http_request, isindexadded);
 	std::cout << "full_path : " << full_path << std::endl;
 	std::string body;
-	if (http_request.getMethod() == "GET")
+	HTTPMessage http_response;
+	if (http_request.getBody().length() > _client_max_body_size)
 	{
-		std::ifstream file1(full_path.c_str());
-		if (file1)
+		http_response.setStatus("413 Request Entity Too Large");
+		std::ifstream error_file("public_html/error_pages/413.html"); // TODO : replace with directory in config file
+		if (error_file)
 		{
 			std::stringstream body_buffer;
-			body_buffer << file1.rdbuf();
+			body_buffer << error_file.rdbuf();
 			body = body_buffer.str();
+			http_response.setBody(body);
+		}
+		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
+		if (size_send == -1)
+			throw std::exception();
+		close(connfd);
+		return ;
+	}
+	if (http_request.getMethod() == "GET")
+	{
+		std::ifstream file(full_path.c_str());
+		if (file)
+		{
+			std::stringstream body_buffer;
+			body_buffer << file.rdbuf();
+			body = body_buffer.str();
+			http_response.setBody(body);
 		}
 		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
+		{
 			body = directory_listing(_root);
+			http_response.setBody(body);
+		}
+		else
+		{
+			http_response.setStatus("404 Not Found");
+			std::ifstream error_file("public_html/error_pages/404.html"); // TODO : replace with directory in config file
+			if (error_file)
+			{
+				std::stringstream body_buffer;
+				body_buffer << error_file.rdbuf();
+				body = body_buffer.str();
+				http_response.setBody(body);
+			}
+		}
 	}
 	else if (http_request.getMethod() == "POST")
 	{
@@ -265,19 +311,18 @@ void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 		if (remove(("database" + http_request.getPath()).c_str()) != 0)
 			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
 	}
-	HTTPMessage http_response("200 OK", body);
+
+	std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
+	std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
+
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)
 		throw std::exception();
-	std::cout << "size_send : " << size_send << std::endl;
-	close(connfd);
+	close(connfd);*/
 }
 
 std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
 {
-	if (DEBUG_MODE == 1)
-		std::cout << http_request.getMessage() << std::endl;
-
 	std::string full_path(_root + http_request.getPath());
 	if (full_path[full_path.length() - 1] == '/')
 	{

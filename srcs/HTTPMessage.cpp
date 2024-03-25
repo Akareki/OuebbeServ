@@ -33,8 +33,9 @@ void	fill_map(const std::string &request, std::map<std::string, std::vector<std:
 	}
 }
 
-HTTPMessage::HTTPMessage()
+HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK")
 {
+	this->addHeader("server", "webserv");
 }
 
 HTTPMessage::HTTPMessage(const std::string &request)
@@ -123,4 +124,14 @@ const std::string &HTTPMessage::getMethod() const
 const std::string &HTTPMessage::getPath() const
 {
 	return _path;
+}
+
+void HTTPMessage::setStatus(const std::string &status)
+{
+	_status = status;
+}
+
+void HTTPMessage::setBody(const std::string &body)
+{
+	_body = body;
 }

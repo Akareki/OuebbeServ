@@ -1,10 +1,12 @@
 à faire:
 
 -gérer les différents code d'erreur et de réussite
+-gérer les méthodes non autorisées
 -gérer les location
 -gérer les redirections
--gérer client max body size
+-directory des error page
 
--gérer le host (127.0.0.1 par exemple) dans le fichier de conf
+alexis:
 
+-parser allowed_methods
 -faire les CGI
