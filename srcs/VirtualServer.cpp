@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 09:46:04 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:10:19 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:31:37 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,7 +231,7 @@ const char *VirtualServer::VirtualServerException::what() const throw()
 VirtualServer::VirtualServerException::~VirtualServerException() throw()
 {}
 
-void VirtualServer::display()
+void VirtualServer::display() const
 {
 	std::cout << "---- SERVER ----" << std::endl;
 	std::cout << "Host: " << _host << std::endl;
@@ -247,7 +247,7 @@ void VirtualServer::display()
 		std::cout << it->first << " -> " << it->second << std::endl;
 	}
 	std::cout << std::endl;
-	for (std::map<std::string,Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
+	for (std::map<std::string,Location>::const_iterator it = _locations.begin(); it != _locations.end(); it++)
 	{
 		std::cout << "-> LOCATION: " << it->first << std::endl;
 		it->second.display();

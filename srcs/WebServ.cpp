@@ -6,11 +6,13 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 11:21:25 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:33:23 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/WebServ.hpp"
+
+unsigned int line_nb = 1;
 
 WebServ::WebServ()
 {
