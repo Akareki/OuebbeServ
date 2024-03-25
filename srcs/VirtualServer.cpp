@@ -228,19 +228,56 @@ void VirtualServer::display() const
 	return html_body;
 }*/
 
+bool	does_path_matches(const std::string &request_path, const std::string &location)
+{
+	int i = 0;
+
+	while (location[i])
+	{
+		if (location[i] != request_path[i])
+		{
+			return (false);
+		}
+		i++;
+	}
+	return (true);
+}
+
+//gives the length of the location, NOT in number of characters
+int location_length(const std::string &location)
+{
+	int i = 0;
+	int count = 0;
+
+	while (location[i])
+	{
+		if (location[i] == '/')
+			count++;
+		i++;
+	}
+	if (location[i - 1] != '/')
+		count++;
+	return (count);
+}
+
 void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 {
 	//Location location;
-
+	int longest_length = 0;
+	std::string longest_location = "/";
 	for (std::map<std::string, Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
 	{
-		if (it->first == http_request.getPath()) //TODO : replace with a function that checks if the path matches.
+		if (does_path_matches(http_request.getPath(), it->first))//TODO : replace with a function that checks if the path matches.
 		{
-			_locations[it->first].answer_request(http_request, connfd);
-			break ;
+			if (location_length(it->first) > longest_length)
+			{
+				longest_length = location_length(it->first);
+				longest_location = it->first;
+			}
+			//_locations[it->first].answer_request(http_request, connfd);
 		}
 	}
-	_locations["/"].answer_request(http_request, connfd);
+	_locations[longest_location].answer_request(http_request, connfd);
 	//location.answer_request(http_request, connfd);
 	/*bool isindexadded = false;
 	std::string full_path = this->get_full_path(http_request, isindexadded);
