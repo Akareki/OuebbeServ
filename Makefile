@@ -6,14 +6,14 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/03/21 08:56:19 by aoizel           ###   ########.fr        #
+#    Updated: 2024/03/21 13:17:28 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME			=	webserv
 
-RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp HTTPMessage.cpp
+RAW_SOURCES		=	main2.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp HTTPMessage.cpp
 
 SOURCES_DIR		=	srcs/
 

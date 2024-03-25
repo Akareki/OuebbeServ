@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:11:11 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 10:46:12 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ class VirtualServer {
 		const std::string &getIndex() const;
 		bool getAutoindex() const;
 		unsigned int getClientMaxBodySize() const;
+		std::map<std::string, std::string> getErrorPages() const;
 		void setOpt(const std::string &, const std::string &);
 		void setHost(const std::string &);
 		void setPort(const std::string &);
@@ -46,6 +47,7 @@ class VirtualServer {
 		void setRoot(const std::string &);
 		void setIndex(const std::string &);
 		void setAutoindex(const std::string &);
+		void setErrorPage(const std::string &);
 		void setClientMaxBodySize(const std::string &);
 		void addLocation(std::string &, Location &);
 		class VirtualServerException: public std::exception
@@ -61,18 +63,18 @@ class VirtualServer {
 		const static std::string optNames[OPTNB];
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 		void display();
-		std::string			get_full_path(const HTTPMessage &http_request);
-		void				answer_request(const HTTPMessage &http_request, int connfd);
+		std::string	get_full_path(const HTTPMessage &http_request);
+		void answer_request(const HTTPMessage &http_request, int connfd);
 	private:
 		std::string _host;
 		std::string _port;
 		std::string _server_name;
 		std::string _root;
 		std::string _index;
-		bool		_isindexadded;
+		bool _isindexadded;
 		bool _autoindex;
 		unsigned int _client_max_body_size;
-		std::map<int, std::string> _error_pages;
+		std::map<std::string, std::string> _error_pages;
 		std::map<std::string, Location> _locations;
 };
 

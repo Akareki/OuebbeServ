@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:00:58 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 10:42:55 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,17 @@
 # define LOCATION_HPP
 #include "defines.hpp"
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
+
+class VirtualServer;
 
 class Location
 {
 	public:
 		Location();
-		Location(std::ifstream &);
+		Location(const VirtualServer &, std::ifstream &);
 		Location(const Location &);
 		Location &operator=(const Location&);
 		~Location();
@@ -34,6 +37,8 @@ class Location
 		void setIndex(const std::string &);
 		void setRedirect(const std::string &);
 		void setAutoindex(const std::string &);
+		void setClientMaxBodySize(const std::string &);
+		void setErrorPage(const std::string &);
 		void setAllowedMethods(const std::string &);
 		class LocationException: public std::exception
 		{
@@ -53,7 +58,9 @@ class Location
 		std::string _index;
 		std::string _redirect;
 		bool _autoindex;
-		std::vector<std::string> _allowed_methods;
+		unsigned int _client_max_body_size;
+		std::map<std::string, std::string> _error_pages;
+		std::map<std::string, bool> _allowed_methods;
 };
 
 #endif

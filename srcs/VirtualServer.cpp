@@ -6,12 +6,14 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 09:46:04 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:46:24 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:10:19 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/VirtualServer.hpp"
 #include <dirent.h>
+#include <map>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -19,21 +21,21 @@ unsigned int line_nb = 1;
 
 const std::string VirtualServer::optNames[OPTNB]
 		= {"host", "listen", "server_name", "root",
-		   "index", "autoindex", "client_max_body_size"};
+		   "index", "autoindex", "client_max_body_size", "error_page"};
 
 void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 		{&VirtualServer::setHost, &VirtualServer::setPort, &VirtualServer::setServerName,
 		 &VirtualServer::setRoot, &VirtualServer::setIndex, &VirtualServer::setAutoindex,
-		 &VirtualServer::setClientMaxBodySize};
+		 &VirtualServer::setClientMaxBodySize, &VirtualServer::setErrorPage};
 
 VirtualServer::VirtualServer() :
-		_host("127.0.0.1"), _port("8080"), _server_name(), _root("public_html"),
+		_host(""), _port("8080"), _server_name(), _root("public_html"),
 		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
-		_host("127.0.0.1"), _port("8080"), _server_name(), _root(),
+		_host(""), _port("8080"), _server_name(), _root(),
 		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
 {
 	std::string line;
@@ -42,6 +44,7 @@ VirtualServer::VirtualServer(std::ifstream &config):
 
 	while (1)
 	{
+		line_nb++;
 		std::getline(config, line);
 		if (line == "}")
 			break;
@@ -54,8 +57,13 @@ VirtualServer::VirtualServer(std::ifstream &config):
 			throw VirtualServerException("format error.");
 		opt_name = line.substr(0, line.find(" "));
 		opt_value = line.substr(line.find(" ") + 1);
-		setOpt(opt_name, opt_value);
-		line_nb++;
+		if (opt_name == "location")
+		{
+			Location loc(*this, config);
+			addLocation(opt_value, loc);
+		}
+		else
+			setOpt(opt_name, opt_value);
 	}
 }
 
@@ -87,6 +95,11 @@ const std::string &VirtualServer::getIndex() const
 bool VirtualServer::getAutoindex() const
 {
 	return (_autoindex);
+}
+
+std::map<std::string, std::string> VirtualServer::getErrorPages() const
+{
+	return (_error_pages);
 }
 
 unsigned int VirtualServer::getClientMaxBodySize() const
@@ -125,7 +138,7 @@ void VirtualServer::setAutoindex(const std::string &opt_value)
 	else if (opt_value == "off")
 		_autoindex = false;
 	else
-		throw VirtualServerException("wrong option value.");
+		throw VirtualServerException("wrong option for autoindex.");
 }
 
 void VirtualServer::setClientMaxBodySize(const std::string &opt_value)
@@ -138,6 +151,22 @@ void VirtualServer::setClientMaxBodySize(const std::string &opt_value)
 	if (value <= 0 || errno == ERANGE || *endptr != '\0' )
 		throw VirtualServerException("wrong value for client_max_body_size");
 	_client_max_body_size = value;
+}
+
+void VirtualServer::setErrorPage(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw VirtualServerException("wrong value for error_page");
+	_error_pages[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
+}
+
+void VirtualServer::addLocation(std::string &opt_name, Location &loc)
+{
+	if (opt_name.substr(opt_name.find(" {"), std::string::npos) != " {")
+		throw VirtualServerException("bad format");
+	opt_name.erase(opt_name.find(" "), std::string::npos);
+	if (_locations.insert(std::pair<std::string, Location>(opt_name, loc)).second == false)
+		throw VirtualServerException("duplicate location.");
 }
 
 void VirtualServer::setOpt(const std::string &opt_name, const std::string &opt_value)
@@ -204,6 +233,7 @@ VirtualServer::VirtualServerException::~VirtualServerException() throw()
 
 void VirtualServer::display()
 {
+	std::cout << "---- SERVER ----" << std::endl;
 	std::cout << "Host: " << _host << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Server name: " << _server_name << std::endl;
@@ -211,6 +241,18 @@ void VirtualServer::display()
 	std::cout << "Index: " << _index << std::endl;
 	std::cout << "Autoindex: " << _autoindex << std::endl;
 	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
+	std::cout << "Error pages:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
+	{
+		std::cout << it->first << " -> " << it->second << std::endl;
+	}
+	std::cout << std::endl;
+	for (std::map<std::string,Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
+	{
+		std::cout << "-> LOCATION: " << it->first << std::endl;
+		it->second.display();
+	std::cout << std::endl;
+	}
 }
 
 std::string directory_listing(const std::string &directory)
