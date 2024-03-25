@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 10:42:55 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:52:07 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ class Location
 {
 	public:
 		Location();
+		Location(const VirtualServer &);
 		Location(const VirtualServer &, std::ifstream &);
 		Location(const Location &);
 		Location &operator=(const Location&);

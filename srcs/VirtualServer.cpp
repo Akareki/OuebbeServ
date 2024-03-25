@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 09:46:04 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:31:37 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:54:49 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,6 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-
-unsigned int line_nb = 1;
 
 const std::string VirtualServer::optNames[OPTNB]
 		= {"host", "listen", "server_name", "root",
@@ -65,6 +63,16 @@ VirtualServer::VirtualServer(std::ifstream &config):
 		else
 			setOpt(opt_name, opt_value);
 	}
+	try
+	{
+		_locations.at("/");
+	}
+	catch (...)
+	{
+		Location loc(*this);
+		_locations["/"] = loc;
+	}
+	
 }
 
 const std::string &VirtualServer::getHost() const

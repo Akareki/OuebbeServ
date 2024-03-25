@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:17:08 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:51:47 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,16 @@ void (Location::*Location::optSetters[OPTNB])(const std::string &) =
 
 Location::Location()
 {
+}
+
+Location::Location(const VirtualServer &vserv):
+	_root(vserv.getRoot()), _index(vserv.getIndex()), _redirect(),
+	_autoindex(vserv.getAutoindex()), _client_max_body_size(vserv.getClientMaxBodySize()),
+	_error_pages(vserv.getErrorPages())
+{
+	_allowed_methods["GET"] = true;
+	_allowed_methods["POST"] = true;
+	_allowed_methods["DELETE"] = true;
 }
 
 Location::Location(const VirtualServer &vserv, std::ifstream &config):
