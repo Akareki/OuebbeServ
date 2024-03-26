@@ -273,6 +273,20 @@ bool	is_directory(const std::string &path)
 	return S_ISDIR(statbuf.st_mode);
 }
 
+int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_error, const std::string &error_code, const std::map<std::string, std::string> &error_pages)
+{
+	http_response.setStatus(full_error);
+	std::ifstream error_file(error_pages.at(error_code).c_str());
+	if (error_file && error_file.is_open())
+	{
+		std::stringstream body_buffer;
+		body_buffer << error_file.rdbuf();
+		http_response.setBody(body_buffer.str());
+		return 0;
+	}
+	return -1;
+}
+
 void Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
@@ -282,27 +296,18 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	HTTPMessage http_response;
 	if (http_request.getBody().length() > _client_max_body_size)
 	{
-		http_response.setStatus("413 Request Entity Too Large");
-		std::ifstream error_file("public_html/error_pages/413.html"); // TODO : replace with directory in config file
-		if (error_file && error_file.is_open())
-		{
-			std::stringstream body_buffer;
-			body_buffer << error_file.rdbuf();
-			body = body_buffer.str();
-			http_response.setBody(body);
-			error_file.close();
-		}
+		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
+			http_response.setBody("<h1>413 Request Entity Too Large</h1");
 	}
 	else if (_allowed_methods.at(http_request.getMethod()) == false)
 	{
-		http_response.setStatus("405 Method Not Allowed");
-		http_response.setBody("<h1>405 Method Not Allowed.</h1>");
+		if (setResponseErrorBody(http_response, "405 Method Not Allowed", "405", _error_pages) == -1)
+			http_response.setBody("<h1>405 Method Not Allowed.</h1>");
 	}
 	else if (!_redirect.empty())
 	{
 		http_response.setStatus("301 Moved Permanently");
 		http_response.addHeader("Location", _redirect);
-
 	}
 	else if (http_request.getMethod() == "GET")
 	{
@@ -358,15 +363,8 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 		}
 		else
 		{
-			http_response.setStatus("404 Not Found");
-			std::ifstream error_file("public_html/error_pages/404.html"); // TODO : replace with directory in config file
-			if (error_file)
-			{
-				std::stringstream body_buffer;
-				body_buffer << error_file.rdbuf();
-				body = body_buffer.str();
-				http_response.setBody(body);
-			}
+			if (setResponseErrorBody(http_response, "404 Not Found", "404", _error_pages) == -1)
+				http_response.setBody("<h1>404 Error</h1>");
 		}
 	}
 	else if (http_request.getMethod() == "POST")
@@ -391,8 +389,9 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 			std::ofstream file(("database/" + filename).c_str(), std::ios::binary);
 			if (file && file.is_open())
 			{
-				file.write(http_request.getBody().data(), http_request.getBody().size()); // Écrire directement les données binaires
-				file.flush();
+				std::stringstream body_buffer;
+				body_buffer << http_request.getBody();
+				file << body_buffer.str();
 				file.close();
 			}
 		}
@@ -400,7 +399,12 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	else if (http_request.getMethod() == "DELETE")
 	{
 		if (remove(("database" + http_request.getPath()).c_str()) != 0)
-			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
+		{
+			if (setResponseErrorBody(http_response, "404 Not Found", "404", _error_pages) == -1)
+				http_response.setBody("<h1>404 Not Found</h1>");
+		}
+		else
+			http_response.setStatus("204 No Content");
 	}
 
 	//std::cout << "REQUEST : " << http_request.getMessage() << std::endl;

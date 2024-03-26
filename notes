@@ -4,9 +4,5 @@
 -directory des error page
 -gérer les cookies
 -chunked requests ?
-
+-utiliser le parsing pour le cgi au lieu de juste regarder "index.php"
 -régler unitialized / segfault
-
-
-fait :
--téléversement de fichiers
