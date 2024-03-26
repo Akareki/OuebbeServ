@@ -1,25 +1,40 @@
-#include "../includes/VirtualServer.hpp"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   VirtualServer.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
+/*   Updated: 2024/03/21 09:10:50 by aoizel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-unsigned int line_nb = 1;
+#include "../includes/VirtualServer.hpp"
+#include <dirent.h>
+#include <map>
+#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 
 const std::string VirtualServer::optNames[OPTNB]
 		= {"host", "listen", "server_name", "root",
-		   "index", "autoindex", "client_max_body_size"};
+		   "index", "autoindex", "client_max_body_size", "error_page"};
 
 void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 		{&VirtualServer::setHost, &VirtualServer::setPort, &VirtualServer::setServerName,
 		 &VirtualServer::setRoot, &VirtualServer::setIndex, &VirtualServer::setAutoindex,
-		 &VirtualServer::setClientMaxBodySize};
+		 &VirtualServer::setClientMaxBodySize, &VirtualServer::setErrorPage};
 
 VirtualServer::VirtualServer() :
 		_host(""), _port("8080"), _server_name(), _root("public_html"),
-		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(1000000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
 		_host(""), _port("8080"), _server_name(), _root(),
-		_index("index.html"), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(1000000)
 {
 	std::string line;
 	std::string opt_name;
@@ -27,6 +42,7 @@ VirtualServer::VirtualServer(std::ifstream &config):
 
 	while (1)
 	{
+		line_nb++;
 		std::getline(config, line);
 		if (line == "}")
 			break;
@@ -39,9 +55,24 @@ VirtualServer::VirtualServer(std::ifstream &config):
 			throw VirtualServerException("format error.");
 		opt_name = line.substr(0, line.find(" "));
 		opt_value = line.substr(line.find(" ") + 1);
-		setOpt(opt_name, opt_value);
-		line_nb++;
+		if (opt_name == "location")
+		{
+			Location loc(*this, config);
+			addLocation(opt_value, loc);
+		}
+		else
+			setOpt(opt_name, opt_value);
 	}
+	try
+	{
+		_locations.at("/");
+	}
+	catch (...)
+	{
+		Location loc(*this);
+		_locations["/"] = loc;
+	}
+
 }
 
 const std::string &VirtualServer::getHost() const
@@ -72,6 +103,11 @@ const std::string &VirtualServer::getIndex() const
 bool VirtualServer::getAutoindex() const
 {
 	return (_autoindex);
+}
+
+std::map<std::string, std::string> VirtualServer::getErrorPages() const
+{
+	return (_error_pages);
 }
 
 unsigned int VirtualServer::getClientMaxBodySize() const
@@ -110,7 +146,7 @@ void VirtualServer::setAutoindex(const std::string &opt_value)
 	else if (opt_value == "off")
 		_autoindex = false;
 	else
-		throw VirtualServerException("wrong option value.");
+		throw VirtualServerException("wrong option for autoindex.");
 }
 
 void VirtualServer::setClientMaxBodySize(const std::string &opt_value)
@@ -123,6 +159,22 @@ void VirtualServer::setClientMaxBodySize(const std::string &opt_value)
 	if (value <= 0 || errno == ERANGE || *endptr != '\0' )
 		throw VirtualServerException("wrong value for client_max_body_size");
 	_client_max_body_size = value;
+}
+
+void VirtualServer::setErrorPage(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw VirtualServerException("wrong value for error_page");
+	_error_pages[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
+}
+
+void VirtualServer::addLocation(std::string &opt_name, Location &loc)
+{
+	if (opt_name.substr(opt_name.find(" {"), std::string::npos) != " {")
+		throw VirtualServerException("bad format");
+	opt_name.erase(opt_name.find(" "), std::string::npos);
+	if (_locations.insert(std::pair<std::string, Location>(opt_name, loc)).second == false)
+		throw VirtualServerException("duplicate location.");
 }
 
 void VirtualServer::setOpt(const std::string &opt_name, const std::string &opt_value)
@@ -189,6 +241,7 @@ VirtualServer::VirtualServerException::~VirtualServerException() throw()
 
 void VirtualServer::display() const
 {
+	std::cout << "---- SERVER ----" << std::endl;
 	std::cout << "Host: " << _host << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Server name: " << _server_name << std::endl;
@@ -196,6 +249,18 @@ void VirtualServer::display() const
 	std::cout << "Index: " << _index << std::endl;
 	std::cout << "Autoindex: " << _autoindex << std::endl;
 	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
+	std::cout << "Error pages:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
+	{
+		std::cout << it->first << " -> " << it->second << std::endl;
+	}
+	std::cout << std::endl;
+	for (std::map<std::string,Location>::const_iterator it = _locations.begin(); it != _locations.end(); it++)
+	{
+		std::cout << "-> LOCATION: " << it->first << std::endl;
+		it->second.display();
+		std::cout << std::endl;
+	}
 }
 
 /*std::string directory_listing(const std::string &directory)
@@ -262,100 +327,20 @@ int location_length(const std::string &location)
 
 void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 {
-	//Location location;
 	int longest_length = 0;
 	std::string longest_location = "/";
 	for (std::map<std::string, Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
 	{
-		if (does_path_matches(http_request.getPath(), it->first))//TODO : replace with a function that checks if the path matches.
+		if (does_path_matches(http_request.getPath(), it->first))
 		{
 			if (location_length(it->first) > longest_length)
 			{
 				longest_length = location_length(it->first);
 				longest_location = it->first;
 			}
-			//_locations[it->first].answer_request(http_request, connfd);
 		}
 	}
 	_locations[longest_location].answer_request(http_request, connfd);
-	//location.answer_request(http_request, connfd);
-	/*bool isindexadded = false;
-	std::string full_path = this->get_full_path(http_request, isindexadded);
-	std::cout << "full_path : " << full_path << std::endl;
-	std::string body;
-	HTTPMessage http_response;
-	if (http_request.getBody().length() > _client_max_body_size)
-	{
-		http_response.setStatus("413 Request Entity Too Large");
-		std::ifstream error_file("public_html/error_pages/413.html"); // TODO : replace with directory in config file
-		if (error_file)
-		{
-			std::stringstream body_buffer;
-			body_buffer << error_file.rdbuf();
-			body = body_buffer.str();
-			http_response.setBody(body);
-		}
-		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-		if (size_send == -1)
-			throw std::exception();
-		close(connfd);
-		return ;
-	}
-	if (http_request.getMethod() == "GET")
-	{
-		std::ifstream file(full_path.c_str());
-		if (file)
-		{
-			std::stringstream body_buffer;
-			body_buffer << file.rdbuf();
-			body = body_buffer.str();
-			http_response.setBody(body);
-		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
-		{
-			body = directory_listing(_root);
-			http_response.setBody(body);
-		}
-		else
-		{
-			http_response.setStatus("404 Not Found");
-			std::ifstream error_file("public_html/error_pages/404.html"); // TODO : replace with directory in config file
-			if (error_file)
-			{
-				std::stringstream body_buffer;
-				body_buffer << error_file.rdbuf();
-				body = body_buffer.str();
-				http_response.setBody(body);
-			}
-		}
-	}
-	else if (http_request.getMethod() == "POST")
-	{
-		int number = 0;
-		while (access(("database/file" + cpp_itoa(number)).c_str(), F_OK) == 0)
-			number++;
-		std::ofstream file(("database/file" + cpp_itoa(number)).c_str());
-		if (file)
-		{
-			std::stringstream body_buffer;
-			body_buffer << http_request.getBody();
-			file << body_buffer.str();
-		}
-		std::cout << "GET BODY : " << http_request.getBody() << std::endl;
-	}
-	else if (http_request.getMethod() == "DELETE")
-	{
-		if (remove(("database" + http_request.getPath()).c_str()) != 0)
-			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
-	}
-
-	std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
-	std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
-
-	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-	if (size_send == -1)
-		throw std::exception();
-	close(connfd);*/
 }
 
 std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)

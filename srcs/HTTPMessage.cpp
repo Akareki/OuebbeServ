@@ -29,7 +29,11 @@ void	fill_map(const std::string &request, std::map<std::string, std::vector<std:
 		if (line.find(' ') == std::string::npos || line.find('\r') == std::string::npos)
 			continue ;
 		std::string second_half = line.substr(line.find(' ') + 1, line.find('\r') - 6);
-		headers[first_half].push_back(second_half);
+		std::vector<std::string> splited_second_half = split(second_half, ';');
+		for (std::vector<std::string>::iterator it = splited_second_half.begin(); it != splited_second_half.end(); it++)
+		{
+			headers[first_half].push_back(*it);
+		}
 	}
 }
 
@@ -54,7 +58,22 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	fill_map(request, _headers);
 
 	//parse body (POST requests usually have a body)
-	_body = split(request, "\r\n\r\n")[1];
+	const std::map<std::string, std::vector<std::string> > &requestMap = this->getHeaders();
+	try {
+		const std::vector<std::string> &contentType = requestMap.at("Content-Type");
+		if (std::find(contentType.begin(),
+					  contentType.end(), std::string("multipart/form-data")) != contentType.end())
+		{
+			;
+		}
+		else
+		{
+			std::vector<std::string> splited_request = split(request, "\r\n\r\n");
+			_body = splited_request[1];
+		}
+	} catch (std::exception &e) {
+
+	}
 }
 
 const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders() const

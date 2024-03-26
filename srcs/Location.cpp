@@ -6,32 +6,51 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/19 11:27:58 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/03/25 11:51:47 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
+#include "../includes/VirtualServer.hpp"
+#include <cstdlib>
 #include <iostream>
+#include <ostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 const std::string Location::optNames[OPTNB]
-		= {"root", "index", "autoindex", "return"};
+		= {"root", "index", "autoindex", "return", "client_max_body_size",
+		   "error_page", "allow"};
 
 void (Location::*Location::optSetters[OPTNB])(const std::string &) =
 		{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
-		 &Location::setRedirect};
+		 &Location::setRedirect, &Location::setClientMaxBodySize,
+		 &Location::setErrorPage, &Location::setAllowedMethods};
 
-Location::Location(): _root(), _index(), _redirect(), _autoindex(false)
+Location::Location()
 {
-	_allowed_methods.push_back("GET");
-	_allowed_methods.push_back("POST");
-	_allowed_methods.push_back("DELETE");
 }
 
-Location::Location(std::ifstream &config):
-		_root(), _index("index.html"), _redirect(), _autoindex(false)
+Location::Location(const VirtualServer &vserv):
+		_root(vserv.getRoot()), _index(vserv.getIndex()), _redirect(),
+		_autoindex(vserv.getAutoindex()), _client_max_body_size(vserv.getClientMaxBodySize()),
+		_error_pages(vserv.getErrorPages())
 {
+	_allowed_methods["GET"] = true;
+	_allowed_methods["POST"] = true;
+	_allowed_methods["DELETE"] = true;
+}
+
+Location::Location(const VirtualServer &vserv, std::ifstream &config):
+		_root(vserv.getRoot()), _index(vserv.getIndex()), _redirect(),
+		_autoindex(vserv.getAutoindex()), _client_max_body_size(vserv.getClientMaxBodySize()),
+		_error_pages(vserv.getErrorPages())
+{
+	_allowed_methods["GET"] = true;
+	_allowed_methods["POST"] = true;
+	_allowed_methods["DELETE"] = true;
+
 	std::string line;
 	std::string opt_name;
 	std::string opt_value;
@@ -71,6 +90,9 @@ Location &Location::operator=(const Location &other)
 	_redirect = other._redirect;
 	_autoindex = other._autoindex;
 	_allowed_methods = other._allowed_methods;
+	_client_max_body_size = other._client_max_body_size;
+	_error_pages = other._error_pages;
+	_allowed_methods = other._allowed_methods;
 	return(*this);
 }
 
@@ -97,6 +119,41 @@ void Location::setAutoindex(const std::string &opt_value)
 void Location::setRedirect(const std::string &opt_value)
 {
 	_redirect = opt_value;
+}
+
+void Location::setClientMaxBodySize(const std::string &opt_value)
+{
+	long value;
+	char *endptr;
+
+	errno = 0;
+	value = strtol(opt_value.c_str(), &endptr, 0);
+	if (value <= 0 || errno == ERANGE || *endptr != '\0' )
+		throw LocationException("wrong value for client_max_body_size");
+	_client_max_body_size = value;
+}
+
+void Location::setErrorPage(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw LocationException("wrong value for error_page");
+	_error_pages[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
+}
+
+void Location::setAllowedMethods(const std::string &opt_value)
+{
+	_allowed_methods["GET"] = false;
+	_allowed_methods["POST"] = false;
+	_allowed_methods["DELETE"] = false;
+	std::vector<std::string> methods = split(opt_value, ',');
+	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); it++)
+	{
+		if (*it == "GET" || *it == "POST" || *it == "DELETE")
+			_allowed_methods[*it] = true;
+		else
+			throw LocationException("wrong method in allow");
+	}
+
 }
 
 void Location::setOpt(const std::string &opt_name, const std::string &opt_value)
@@ -164,6 +221,18 @@ void Location::display() const
 	std::cout << "Index: " << _index << std::endl;
 	std::cout << "Autoindex: " << _autoindex << std::endl;
 	std::cout << "Redirect: " << _redirect << std::endl;
+	std::cout << "Client max body size: " << _client_max_body_size << std::endl;
+	std::cout << "Error pages:" << _error_pages.size() << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
+	{
+		std::cout << "	" << it->first << " -> " << it->second << std::endl;
+	}
+	std::cout << "Allowed methods: " << _allowed_methods.size() << std::endl;
+	for (std::map<std::string, bool>::const_iterator it = _allowed_methods.begin(); it != _allowed_methods.end(); it++)
+	{
+		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << std::endl;
 }
 
 std::string directory_listing(const std::string &directory)
@@ -196,6 +265,14 @@ std::string directory_listing(const std::string &directory)
 	return html_body;
 }
 
+bool	is_directory(const std::string &path)
+{
+	struct stat statbuf;
+
+	stat(path.c_str(), &statbuf);
+	return S_ISDIR(statbuf.st_mode);
+}
+
 void Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
@@ -207,23 +284,35 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	{
 		http_response.setStatus("413 Request Entity Too Large");
 		std::ifstream error_file("public_html/error_pages/413.html"); // TODO : replace with directory in config file
-		if (error_file)
+		if (error_file && error_file.is_open())
 		{
 			std::stringstream body_buffer;
 			body_buffer << error_file.rdbuf();
 			body = body_buffer.str();
 			http_response.setBody(body);
+			error_file.close();
 		}
 		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 		if (size_send == -1)
 			throw std::exception();
-		close(connfd);
+		//close(connfd);
 		return ;
 	}
-	if (http_request.getMethod() == "GET")
+	if (_allowed_methods.at(http_request.getMethod()) == false)
+	{
+		http_response.setStatus("405 Method Not Allowed");
+		http_response.setBody("<h1>405 Method Not Allowed.</h1>");
+	}
+	else if (!_redirect.empty())
+	{
+		http_response.setStatus("301 Moved Permanently");
+		http_response.addHeader("Location", _redirect);
+
+	}
+	else if (http_request.getMethod() == "GET")
 	{
 		std::ifstream file(full_path.c_str());
-		if (file)
+		if (file && file.is_open() && !is_directory(full_path))
 		{
 			std::stringstream body_buffer;
 			body_buffer << file.rdbuf();
@@ -269,7 +358,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	}
 
 	std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
-	std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
+	//std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
 
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)
@@ -279,7 +368,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 
 std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
 {
-	std::string full_path(_root + http_request.getPath());
+	std::string full_path(_root.substr(0, _root.length() - 1) + http_request.getPath());
 	if (full_path[full_path.length() - 1] == '/')
 	{
 		full_path += _index;

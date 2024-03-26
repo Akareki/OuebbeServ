@@ -124,7 +124,7 @@ int	accept_connection(int sockfd)
 
 std::string read_request(int connfd)
 {
-	char buffer[10000];
+	char buffer[1000000];
 	ssize_t len_read = recv(connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
 	if (len_read == -1)
 	{
@@ -187,6 +187,8 @@ void Socket::http_listen()
 			else
 			{
 				std::string request = read_request(_events[n].data.fd);
+				if (request.empty())
+					throw std::exception();
 				this->answer_request(request, _events[n].data.fd);
 			}
 		}

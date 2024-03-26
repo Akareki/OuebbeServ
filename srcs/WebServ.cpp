@@ -1,6 +1,8 @@
 
 #include "../includes/WebServ.hpp"
 
+unsigned int line_nb = 1;
+
 WebServ::WebServ()
 {
 

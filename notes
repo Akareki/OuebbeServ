@@ -1,12 +1,11 @@
 à faire:
 
 -gérer les différents code d'erreur et de réussite
--gérer les méthodes non autorisées
--gérer les location
--gérer les redirections
 -directory des error page
-
-alexis:
-
--parser allowed_methods
+-gérer les cookies
+-gérer les multiform data post request
+-téléversement de fichiers
+-chunked requests ?
 -faire les CGI
+
+-régler unitialized / segfault
