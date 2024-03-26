@@ -126,6 +126,7 @@ std::string read_request(int connfd)
 {
 	char buffer[1000000];
 	ssize_t len_read = recv(connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
+	std::cout << "len read : " << len_read << std::endl;
 	if (len_read == -1)
 	{
 		std::cerr << "read failed" << std::endl;

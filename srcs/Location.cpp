@@ -292,13 +292,8 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 			http_response.setBody(body);
 			error_file.close();
 		}
-		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-		if (size_send == -1)
-			throw std::exception();
-		//close(connfd);
-		return ;
 	}
-	if (_allowed_methods.at(http_request.getMethod()) == false)
+	else if (_allowed_methods.at(http_request.getMethod()) == false)
 	{
 		http_response.setStatus("405 Method Not Allowed");
 		http_response.setBody("<h1>405 Method Not Allowed.</h1>");
@@ -314,10 +309,47 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 		std::ifstream file(full_path.c_str());
 		if (file && file.is_open() && !is_directory(full_path))
 		{
-			std::stringstream body_buffer;
-			body_buffer << file.rdbuf();
-			body = body_buffer.str();
-			http_response.setBody(body);
+			if (full_path.find("index.php") != std::string::npos)
+			{
+				char buffer[2000];
+				char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
+				int pipefd[2];
+				if (pipe(pipefd) == -1)
+					throw std::exception();
+				pid_t pid = fork();
+				if (pid == -1)
+					throw std::exception();
+				if (pid == 0)
+				{
+					close(pipefd[0]);
+					dup2(pipefd[1], 1);
+					close(pipefd[1]);
+					execve("/usr/bin/php-cgi", list_buffer, NULL);
+				}
+				else
+				{
+					close(pipefd[1]);
+					ssize_t len_read;
+					len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
+					if (len_read == -1)
+						throw std::exception();
+					buffer[len_read] = '\0';
+					close(pipefd[0]);
+					waitpid(pid, NULL, 0);
+					//send the data
+					std::string body = split(buffer, "\r\n")[2];
+					http_response.addHeader("Content-Type", "text/html");
+					http_response.addHeader("Content-Type", "charset=UTF-8");
+					http_response.setBody(body);
+				}
+			}
+			else
+			{
+				std::stringstream body_buffer;
+				body_buffer << file.rdbuf();
+				body = body_buffer.str();
+				http_response.setBody(body);
+			}
 		}
 		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
 		{
@@ -340,16 +372,30 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	else if (http_request.getMethod() == "POST")
 	{
 		int number = 0;
-		while (access(("database/file" + cpp_itoa(number)).c_str(), F_OK) == 0)
-			number++;
-		std::ofstream file(("database/file" + cpp_itoa(number)).c_str());
-		if (file)
+		std::string filename = http_request.getFileName();
+		if (filename.empty())
 		{
-			std::stringstream body_buffer;
-			body_buffer << http_request.getBody();
-			file << body_buffer.str();
+			while (access(("database/file" + cpp_itoa(number)).c_str(), F_OK) == 0)
+				number++;
+			std::ofstream file(("database/file" + cpp_itoa(number)).c_str());
+			if (file && file.is_open())
+			{
+				std::stringstream body_buffer;
+				body_buffer << http_request.getBody();
+				file << body_buffer.str();
+				file.close();
+			}
 		}
-		std::cout << "GET BODY : " << http_request.getBody() << std::endl;
+		else
+		{
+			std::ofstream file(("database/" + filename).c_str(), std::ios::binary);
+			if (file && file.is_open())
+			{
+				file.write(http_request.getBody().data(), http_request.getBody().size()); // Écrire directement les données binaires
+				file.flush();
+				file.close();
+			}
+		}
 	}
 	else if (http_request.getMethod() == "DELETE")
 	{
@@ -357,7 +403,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 			std::cerr << "could not remove file" << std::endl; //error to define (probably send error code)
 	}
 
-	std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
+	//std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
 	//std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
 
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);

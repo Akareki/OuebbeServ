@@ -3,9 +3,10 @@
 -gérer les différents code d'erreur et de réussite
 -directory des error page
 -gérer les cookies
--gérer les multiform data post request
--téléversement de fichiers
 -chunked requests ?
--faire les CGI
 
 -régler unitialized / segfault
+
+
+fait :
+-téléversement de fichiers

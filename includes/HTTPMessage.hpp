@@ -33,6 +33,7 @@ class HTTPMessage
 		const std::string &getMethod() const;
 		const std::string &getPath() const;
 		const std::string &getBody() const;
+		std::string getFileName() const; // relevant only for multipart/form-data contenttype
 		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 		void setStatus(const std::string &status);
 		void setBody(const std::string &body);
@@ -45,6 +46,7 @@ class HTTPMessage
 		std::string _method;
 		std::string _path;
 		std::string _status;
+		std::string _file_header; //relevant only for multipart/form-data contenttype
 		std::map<std::string, std::vector<std::string> > _headers;
 		std::string _body;
 };

@@ -58,13 +58,15 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	fill_map(request, _headers);
 
 	//parse body (POST requests usually have a body)
-	const std::map<std::string, std::vector<std::string> > &requestMap = this->getHeaders();
+	const std::map<std::string, std::vector<std::string> > &requestMap = _headers;
 	try {
 		const std::vector<std::string> &contentType = requestMap.at("Content-Type");
 		if (std::find(contentType.begin(),
-					  contentType.end(), std::string("multipart/form-data")) != contentType.end())
+					  contentType.end(), "multipart/form-data") != contentType.end())
 		{
-			;
+			std::vector<std::string> splited_request = split(request, "\r\n\r\n");
+			_file_header = splited_request[1];
+			_body = splited_request[2];
 		}
 		else
 		{
@@ -74,6 +76,18 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	} catch (std::exception &e) {
 
 	}
+}
+
+std::string	HTTPMessage::getFileName() const
+{
+	size_t index_begin = _file_header.find("filename=\"", 0);
+	if (index_begin == std::string::npos)
+		return ("");
+	size_t index_end = _file_header.find("\"", index_begin + 10);
+	if (index_end == std::string::npos)
+		return ("");
+	std::string filename = _file_header.substr(index_begin + 10, index_end - (index_begin + 10));
+	return (filename);
 }
 
 const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders() const
@@ -120,10 +134,12 @@ std::string HTTPMessage::getMessage() const
 	msg += _http_version + " " + _status + CRLF;
 	for (std::map<std::string, std::vector<std::string> >::const_iterator it = _headers.begin(); it != _headers.end(); it++)
 	{
+		msg += it->first + ": ";
 		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
-			msg += it->first + ": " + *vit + CRLF;
+			 msg += *vit + "; ";
 		}
+		msg += CRLF;
 	}
 	msg += CRLF;
 	msg += _body;

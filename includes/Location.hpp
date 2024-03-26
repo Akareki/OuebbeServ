@@ -16,6 +16,7 @@
 #include "HTTPMessage.hpp"
 #include <fstream>
 #include <map>
+#include <sys/wait.h>
 #include <string>
 #include <sys/stat.h>
 #include <algorithm>
