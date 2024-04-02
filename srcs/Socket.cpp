@@ -122,28 +122,28 @@ int	accept_connection(int sockfd)
 	return connfd;
 }
 
-std::string read_request(int connfd)
-{
-	char buffer[1000000];
-	ssize_t len_read = recv(connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
-	std::cout << "len read : " << len_read << std::endl;
-	if (len_read == -1)
-	{
-		std::cerr << "read failed" << std::endl;
-		close(connfd);
-		throw std::runtime_error("read problem");
-	}
-	buffer[len_read] = '\0';
-	std::cout << buffer << std::endl;
-	return (buffer);
-}
-
 void	Socket::answer_request(const std::string &request, int connfd)
 {
 	HTTPMessage http_request(request);
 
+	if (http_request.isBadRequest() == true)
+	{
+		HTTPMessage http_response;
+		http_response.setStatus("400");
+		http_response.setBody("<h1>400 Bad Request</h1>");
+		http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
+		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
+		if (size_send == -1)
+			throw std::runtime_error("send issue");
+		return ;
+	}
 	bool answered = false;
-	std::string server_name = http_request.getHeaders().at("Host")[0];
+	std::string server_name;
+	try {
+		server_name = http_request.getHeaders().at("Host")[0];
+	} catch (...) {
+
+	}
 	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (server_name == it->getServerName())
@@ -153,44 +153,50 @@ void	Socket::answer_request(const std::string &request, int connfd)
 			break;
 		}
 	}
-	if (!answered)
+	if (!answered || server_name.empty())
 		_servers[0].answer_request(http_request, connfd);
 }
 
 void Socket::http_listen()
 {
-		int connfd;
-		int fd_amount = epoll_wait(_epollfd, _events, 10, 0);
-		if (fd_amount == -1)
+	int connfd;
+	int fd_amount = epoll_wait(_epollfd, _events, 10, 0);
+	if (fd_amount == -1)
+	{
+		std::cerr << "epoll_wait failed" << std::endl;
+		throw std::runtime_error("epoll wait issue");
+	}
+	for (int n = 0; n < fd_amount; n++)
+	{
+		if (_events[n].data.fd == _sockfd)
 		{
-			std::cerr << "epoll_wait failed" << std::endl;
-			throw std::runtime_error("epoll wait issue");
-		}
-		for (int n = 0; n < fd_amount; n++)
-		{
-			if (_events[n].data.fd == _sockfd)
+			connfd = accept_connection(_sockfd);
+			if (connfd == -1)
 			{
-				connfd = accept_connection(_sockfd);
-				if (connfd == -1)
-				{
-					std::cerr << "accept connection failed" << std::endl;
-					throw std::runtime_error("accept issue");
-				}
-				//todo : set non blocking
-				//fcntl(connfd, F_SETFL, O_NONBLOCK);
-				_event.events = EPOLLIN | EPOLLOUT;
-				_event.data.fd = connfd;
-				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
-				{
-					std::cerr << "epoll ctl failed" << std::endl;
-					throw std::runtime_error("epoll ctl issue");
-				}
+				std::cerr << "accept connection failed" << std::endl;
+				throw std::runtime_error("accept issue");
 			}
-			else if (_events[n].events & EPOLLIN)
+			_event.events = EPOLLIN | EPOLLOUT;
+			_event.data.fd = connfd;
+			if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 			{
-				std::string request = read_request(_events[n].data.fd);
+				std::cerr << "epoll ctl failed" << std::endl;
+				throw std::runtime_error("epoll ctl issue");
+			}
+			_clients[connfd] = Client(connfd);
+		}
+		else
+		{
+			if (_events[n].events & EPOLLIN)
+			{
+				_clients.at(_events[n].data.fd).readRequest();
+			}
+			else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
+			{
+				std::string request = _clients.at(_events[n].data.fd).getRequest();
 				if (!request.empty())
 					this->answer_request(request, _events[n].data.fd);
 			}
 		}
+	}
 }

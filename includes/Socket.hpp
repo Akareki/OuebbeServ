@@ -4,6 +4,7 @@
 
 #include "webh.hpp"
 #include <iostream>
+#include "Client.hpp"
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <cstdlib>
@@ -31,6 +32,7 @@ public:
 	void	answer_request(const std::string &request, int connfd);
 private:
 	Socket();
+	std::map<int, Client> _clients;
 	int 	_epollfd;
 	int 	_sockfd;
 	std::string _host;

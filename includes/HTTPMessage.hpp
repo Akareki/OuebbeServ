@@ -24,12 +24,12 @@ class HTTPMessage
 	public:
 		HTTPMessage();
 		HTTPMessage(const std::string &request);
-		HTTPMessage(const std::string &status, const std::string &response_body);
 		HTTPMessage(const HTTPMessage&);
 		~HTTPMessage();
 		HTTPMessage &operator=(const HTTPMessage&);
 		void addHeader(const std::string &, const std::string &);
 		std::string getMessage() const;
+		bool			isBadRequest() const;
 		const std::string &getMethod() const;
 		const std::string &getPath() const;
 		const std::string &getBody() const;
@@ -49,6 +49,7 @@ class HTTPMessage
 		std::string _file_header; //relevant only for multipart/form-data contenttype
 		std::map<std::string, std::vector<std::string> > _headers;
 		std::string _body;
+		bool 		_is_bad_request;
 };
 
 #endif

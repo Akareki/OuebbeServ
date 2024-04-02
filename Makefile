@@ -13,7 +13,7 @@
 
 NAME			=	webserv
 
-RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp HTTPMessage.cpp
+RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp utils.cpp HTTPMessage.cpp Client.cpp
 
 SOURCES_DIR		=	srcs/
 
