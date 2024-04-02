@@ -61,6 +61,7 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	const std::map<std::string, std::vector<std::string> > &requestMap = _headers;
 	try {
 		const std::vector<std::string> &contentType = requestMap.at("Content-Type");
+
 		if (std::find(contentType.begin(),
 					  contentType.end(), "multipart/form-data") != contentType.end())
 		{
@@ -73,8 +74,8 @@ HTTPMessage::HTTPMessage(const std::string &request)
 			std::vector<std::string> splited_request = split(request, "\r\n\r\n");
 			_body = splited_request[1];
 		}
-	} catch (std::exception &e) {
 
+	} catch (std::exception &e) {
 	}
 }
 
@@ -137,7 +138,9 @@ std::string HTTPMessage::getMessage() const
 		msg += it->first + ": ";
 		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
-			 msg += *vit + "; ";
+			msg += *vit;
+			if (vit != it->second.end() - 1)
+				msg += "; ";
 		}
 		msg += CRLF;
 	}

@@ -41,17 +41,17 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 {
 	_sockfd = initialize(host, atoi(port.c_str()));
 	if (_sockfd == -1)
-		throw std::exception();
+		throw std::runtime_error("sockfd issue");
 	_epollfd = epoll_create1(0);
 	if (_epollfd == -1)
-		throw std::exception();
+		throw std::runtime_error("epoll create issue");
 
 	_event.events = EPOLLIN;
 	_event.data.fd = _sockfd;
 	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
 	{
 		close(_epollfd);
-		throw std::exception();
+		throw std::runtime_error("epoll ctl issue");
 	}
 }
 
@@ -131,9 +131,10 @@ std::string read_request(int connfd)
 	{
 		std::cerr << "read failed" << std::endl;
 		close(connfd);
-		throw std::exception();
+		throw std::runtime_error("read problem");
 	}
 	buffer[len_read] = '\0';
+	std::cout << buffer << std::endl;
 	return (buffer);
 }
 
@@ -163,7 +164,7 @@ void Socket::http_listen()
 		if (fd_amount == -1)
 		{
 			std::cerr << "epoll_wait failed" << std::endl;
-			throw std::exception();
+			throw std::runtime_error("epoll wait issue");
 		}
 		for (int n = 0; n < fd_amount; n++)
 		{
@@ -173,7 +174,7 @@ void Socket::http_listen()
 				if (connfd == -1)
 				{
 					std::cerr << "accept connection failed" << std::endl;
-					throw std::exception();
+					throw std::runtime_error("accept issue");
 				}
 				//todo : set non blocking
 				//fcntl(connfd, F_SETFL, O_NONBLOCK);
@@ -182,15 +183,14 @@ void Socket::http_listen()
 				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 				{
 					std::cerr << "epoll ctl failed" << std::endl;
-					throw std::exception();
+					throw std::runtime_error("epoll ctl issue");
 				}
 			}
 			else
 			{
 				std::string request = read_request(_events[n].data.fd);
-				if (request.empty())
-					throw std::exception();
-				this->answer_request(request, _events[n].data.fd);
+				if (!request.empty())
+					this->answer_request(request, _events[n].data.fd);
 			}
 		}
 }

@@ -276,7 +276,15 @@ bool	is_directory(const std::string &path)
 int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_error, const std::string &error_code, const std::map<std::string, std::string> &error_pages)
 {
 	http_response.setStatus(full_error);
-	std::ifstream error_file(error_pages.at(error_code).c_str());
+	std::string test;
+
+	try {
+		test = error_pages.at(error_code);
+	} catch (...) {
+
+	}
+
+	std::ifstream error_file(test.c_str());
 	if (error_file && error_file.is_open())
 	{
 		std::stringstream body_buffer;
@@ -320,10 +328,10 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 				char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
 				int pipefd[2];
 				if (pipe(pipefd) == -1)
-					throw std::exception();
+					throw std::runtime_error("pipe issue");
 				pid_t pid = fork();
 				if (pid == -1)
-					throw std::exception();
+					throw std::runtime_error("fork issue");
 				if (pid == 0)
 				{
 					close(pipefd[0]);
@@ -337,7 +345,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 					ssize_t len_read;
 					len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
 					if (len_read == -1)
-						throw std::exception();
+						throw std::runtime_error("read issue");
 					buffer[len_read] = '\0';
 					close(pipefd[0]);
 					waitpid(pid, NULL, 0);
@@ -410,10 +418,12 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	//std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
 	//std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
 
+	http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
+
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
 	if (size_send == -1)
-		throw std::exception();
-	close(connfd);
+		throw std::runtime_error("send issue");
+	//close(connfd);
 }
 
 std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
