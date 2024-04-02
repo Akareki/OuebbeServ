@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 08:42:16 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 09:28:32 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:30:50 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 class Client
 {
 	public:
+		Client();
 		Client(int);
 		Client(const Client&);
 		~Client();
@@ -26,7 +27,6 @@ class Client
 		bool isReady();
 		void readRequest();
 	private:
-		Client();
 		bool _ready;
 		int _connfd;
 		std::string _request;

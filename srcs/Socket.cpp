@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:17:25 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:31:48 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,7 +198,7 @@ void Socket::http_listen()
 					std::cerr << "epoll ctl failed" << std::endl;
 					throw std::runtime_error("epoll ctl issue");
 				}
-				_clients.at(connfd) = Client(connfd);
+				_clients[connfd] = Client(connfd);
 			}
 			else
 			{
@@ -207,7 +207,6 @@ void Socket::http_listen()
 				std::string request = _clients.at(_events[n].data.fd).getRequest();
 				if (!request.empty())
 					this->answer_request(request, _events[n].data.fd);
-				this->answer_request(request, _events[n].data.fd);
 			}
 		}
 }
