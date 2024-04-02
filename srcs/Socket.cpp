@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:31:48 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 11:08:53 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -200,13 +200,18 @@ void Socket::http_listen()
 				}
 				_clients[connfd] = Client(connfd);
 			}
-			else
+			else 
 			{
-				_clients.at(_events[n].data.fd).readRequest();
-				std::cout << _clients.at(_events[n].data.fd).getRequest() << std::endl;
-				std::string request = _clients.at(_events[n].data.fd).getRequest();
-				if (!request.empty())
-					this->answer_request(request, _events[n].data.fd);
+				if (_events[n].events & EPOLLIN)
+				{
+					_clients.at(_events[n].data.fd).readRequest();
+				}
+				if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
+				{
+					std::string request = _clients.at(_events[n].data.fd).getRequest();
+					if (!request.empty())
+						this->answer_request(request, _events[n].data.fd);
+				}
 			}
 		}
 }

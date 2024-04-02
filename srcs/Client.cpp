@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 09:19:26 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 09:46:21 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 11:10:05 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,11 @@ const std::string &Client::getRequest() const
 
 bool Client::isReady()
 {
+	if (_ready)
+	{
+		_ready = false;
+		return (true);
+	}
 	return (_ready);
 }
 
