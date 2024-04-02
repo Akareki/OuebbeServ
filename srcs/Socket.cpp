@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 11:08:53 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:42:31 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -153,7 +153,7 @@ std::string read_request(int connfd)
 	return (buffer);
 }
 
-void	Socket::answer_request(const std::string &request, int connfd)
+void	Socket::answer_request(const HTTPMessage &request, int connfd)
 {
 	HTTPMessage http_request(request);
 
@@ -204,12 +204,13 @@ void Socket::http_listen()
 			{
 				if (_events[n].events & EPOLLIN)
 				{
-					_clients.at(_events[n].data.fd).readRequest();
+					if (_clients.at(_events[n].data.fd).readRequest() == -1)
+						_clients.erase(_events[n].data.fd);
 				}
-				if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
+				else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
 				{
-					std::string request = _clients.at(_events[n].data.fd).getRequest();
-					if (!request.empty())
+					HTTPMessage request = _clients.at(_events[n].data.fd).getRequest();
+					if (!request.bad())
 						this->answer_request(request, _events[n].data.fd);
 				}
 			}

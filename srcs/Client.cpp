@@ -6,11 +6,12 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 09:19:26 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 11:10:05 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:41:06 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Client.hpp"
+#include <algorithm>
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
@@ -47,7 +48,7 @@ int Client::getFd() const
 	return (_connfd);
 }
 
-const std::string &Client::getRequest() const
+const HTTPMessage &Client::getRequest() const
 {
 	return (_request);
 }
@@ -62,16 +63,17 @@ bool Client::isReady()
 	return (_ready);
 }
 
-void Client::readRequest()
+int Client::readRequest()
 {
 	char buffer[10000];
 	ssize_t len_read = recv(_connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
-	if (len_read == -1)
+	if (len_read <= 0)
 	{
 		close(_connfd);
-		throw std::runtime_error("Recv error");
+		return (-1);
 	}
 	buffer[len_read] = '\0';
-	_request = std::string(buffer);
+	_request = HTTPMessage(buffer);
 	_ready = true;
+	return (0);
 }
