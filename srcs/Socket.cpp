@@ -6,14 +6,17 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 11:21:06 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 09:59:36 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Socket.hpp"
+#include "../includes/Client.hpp"
 #include <cstring>
 #include <fcntl.h>
+#include <iostream>
 #include <netinet/in.h>
+#include <ostream>
 #include <unistd.h>
 
 int	initialize(const std::string &host, int port)
@@ -185,18 +188,20 @@ void Socket::http_listen()
 					std::cerr << "accept connection failed" << std::endl;
 					throw std::exception();
 				}
-				_event.events = EPOLLIN | EPOLLET;
+				_event.events = EPOLLIN | EPOLLOUT;
 				_event.data.fd = connfd;
 				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 				{
 					std::cerr << "epoll ctl failed" << std::endl;
 					throw std::exception();
 				}
+				_clients.at(connfd) = Client(connfd);
 			}
 			else
 			{
-				std::string request = read_request(_events[n].data.fd);
-				this->answer_request(request, _events[n].data.fd);
+				_clients.at(_events[n].data.fd).readRequest();
+				std::cout << _clients.at(_events[n].data.fd).getRequest() << std::endl;
+				this->answer_request(_clients.at(_events[n].data.fd).getRequest(), _events[n].data.fd);
 			}
 		}
 }
