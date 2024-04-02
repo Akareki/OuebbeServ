@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 11:39:11 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:11:17 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:47:57 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ class HTTPMessage
 		void addHeader(const std::string &, const std::string &);
 		std::string getMessage() const;
 		std::string getFileName() const; // relevant only for multipart/form-data contenttype
+		bool isBadRequest() const;
 		class HTTPMessageException: public std::exception
 		{
 			virtual const char *what() const throw();
@@ -48,6 +49,7 @@ class HTTPMessage
 		std::string _file_header; //relevant only for multipart/form-data contenttype
 		std::map<std::string, std::vector<std::string> > _headers;
 		std::string _body;
+		bool 		_is_bad_request;
 };
 
 #endif

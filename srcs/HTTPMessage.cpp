@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:11:47 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:47:36 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,27 @@ HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK")
 	this->addHeader("server", "webserv");
 }
 
-HTTPMessage::HTTPMessage(const std::string &request)
+int check_request(const std::string request)
 {
+	std::string line;
+	std::istringstream request_stream(request);
+	std::getline(request_stream, line, '\n');
+
+	if (split(line, ' ').size() != 3 || split(line,' ')[2] != "HTTP/1.1\r")
+		return -1;
+	if (split(request, "\r\n\r\n").size() != 2 && split(request, "\r\n\r\n").size() != 3)
+		return -1;
+	return 0;
+}
+
+HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //request constructor
+{
+	if (check_request(request) == -1)
+	{
+		_is_bad_request = true;
+		return ;
+	}
+	//parse first line with path and method
 	std::string line;
 	std::istringstream request_stream(request);
 	std::getline(request_stream, line, '\n');
@@ -74,6 +93,11 @@ HTTPMessage::HTTPMessage(const std::string &request)
 
 	} catch (std::exception &e) {
 	}
+}
+
+bool HTTPMessage::isBadRequest() const
+{
+	return _is_bad_request;
 }
 
 std::string	HTTPMessage::getFileName() const

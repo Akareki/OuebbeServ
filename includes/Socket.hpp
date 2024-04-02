@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 11:25:46 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:46:33 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define SOCKET_HPP
 
 #include <iostream>
+#include "Client.hpp"
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <cstdlib>

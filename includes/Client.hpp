@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 08:42:16 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:40:25 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:45:54 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@ class Client
 		bool _ready;
 		int _connfd;
 		HTTPMessage _request;
-		
 };
 
 #endif

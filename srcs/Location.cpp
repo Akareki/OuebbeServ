@@ -305,7 +305,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	if (http_request.getBody().length() > _client_max_body_size)
 	{
 		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
-			http_response.setBody("<h1>413 Request Entity Too Large</h1");
+			http_response.setBody("<h1>413 Request Entity Too Large</h1>");
 	}
 	else if (_allowed_methods.at(http_request.getMethod()) == false)
 	{
