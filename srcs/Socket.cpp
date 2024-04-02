@@ -178,7 +178,7 @@ void Socket::http_listen()
 				}
 				//todo : set non blocking
 				//fcntl(connfd, F_SETFL, O_NONBLOCK);
-				_event.events = EPOLLIN | EPOLLET;
+				_event.events = EPOLLIN | EPOLLOUT;
 				_event.data.fd = connfd;
 				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 				{
@@ -186,7 +186,7 @@ void Socket::http_listen()
 					throw std::runtime_error("epoll ctl issue");
 				}
 			}
-			else
+			else if (_events[n].events & EPOLLIN)
 			{
 				std::string request = read_request(_events[n].data.fd);
 				if (!request.empty())
