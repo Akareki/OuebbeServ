@@ -1,2 +1,14 @@
--Socket différent uniquement quand port différent
--utiliser epoll pour gérer beaucoup de clients qui se connectent en même temps, ainsi que la connexion à plusieurs ports
+à faire:
+
+
+-gérer les cookies (Set-Cookie envoyé selon fichier de configuration, modifier index selon cookie)
+-chunked requests ?
+-utiliser le parsing pour le cgi au lieu de juste regarder "index.php"
+-régler unitialized / segfault
+
+
+
+fait :
+-gérer les différents code d'erreur et de réussite
+-directory des error page
+-faire les cgi

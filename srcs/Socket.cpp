@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 09:59:36 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:17:25 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,10 @@ int	initialize(const std::string &host, int port)
 	//initialize structure
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	//todo : maybe replace INADDR_ANY by host
-	(void)host;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	if (host.empty())
+		serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	else
+		serv_addr.sin_addr.s_addr = inet_addr(host.c_str());
 	serv_addr.sin_port = htons(port);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	//network funcs
@@ -55,17 +56,17 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 {
 	_sockfd = initialize(host, atoi(port.c_str()));
 	if (_sockfd == -1)
-		throw std::exception();
+		throw std::runtime_error("sockfd issue");
 	_epollfd = epoll_create1(0);
 	if (_epollfd == -1)
-		throw std::exception();
+		throw std::runtime_error("epoll create issue");
 
 	_event.events = EPOLLIN;
 	_event.data.fd = _sockfd;
 	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
 	{
 		close(_epollfd);
-		throw std::exception();
+		throw std::runtime_error("epoll ctl issue");
 	}
 }
 
@@ -138,15 +139,17 @@ int	accept_connection(int sockfd)
 
 std::string read_request(int connfd)
 {
-	char buffer[10000];
+	char buffer[1000000];
 	ssize_t len_read = recv(connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
+	std::cout << "len read : " << len_read << std::endl;
 	if (len_read == -1)
 	{
 		std::cerr << "read failed" << std::endl;
 		close(connfd);
-		throw std::exception();
+		throw std::runtime_error("read problem");
 	}
 	buffer[len_read] = '\0';
+	std::cout << buffer << std::endl;
 	return (buffer);
 }
 
@@ -166,7 +169,7 @@ void	Socket::answer_request(const std::string &request, int connfd)
 		}
 	}
 	if (!answered)
-		_servers[0].answer_request(request, connfd);
+		_servers[0].answer_request(http_request, connfd);
 }
 
 void Socket::http_listen()
@@ -176,7 +179,7 @@ void Socket::http_listen()
 		if (fd_amount == -1)
 		{
 			std::cerr << "epoll_wait failed" << std::endl;
-			throw std::exception();
+			throw std::runtime_error("epoll wait issue");
 		}
 		for (int n = 0; n < fd_amount; n++)
 		{
@@ -186,14 +189,14 @@ void Socket::http_listen()
 				if (connfd == -1)
 				{
 					std::cerr << "accept connection failed" << std::endl;
-					throw std::exception();
+					throw std::runtime_error("accept issue");
 				}
 				_event.events = EPOLLIN | EPOLLOUT;
 				_event.data.fd = connfd;
 				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 				{
 					std::cerr << "epoll ctl failed" << std::endl;
-					throw std::exception();
+					throw std::runtime_error("epoll ctl issue");
 				}
 				_clients.at(connfd) = Client(connfd);
 			}
@@ -201,7 +204,10 @@ void Socket::http_listen()
 			{
 				_clients.at(_events[n].data.fd).readRequest();
 				std::cout << _clients.at(_events[n].data.fd).getRequest() << std::endl;
-				this->answer_request(_clients.at(_events[n].data.fd).getRequest(), _events[n].data.fd);
+				std::string request = _clients.at(_events[n].data.fd).getRequest();
+				if (!request.empty())
+					this->answer_request(request, _events[n].data.fd);
+				this->answer_request(request, _events[n].data.fd);
 			}
 		}
 }

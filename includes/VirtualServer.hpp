@@ -6,12 +6,13 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:53:54 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:20:15 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef VIRTUALSERVER_HPP
 # define VIRTUALSERVER_HPP
+
 #include "Location.hpp"
 #include "defines.hpp"
 #include "HTTPMessage.hpp"
@@ -24,6 +25,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+
+class Location;
 
 class VirtualServer {
 	public:
@@ -64,7 +67,8 @@ class VirtualServer {
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 		void display() const;
 		std::string	get_full_path(const HTTPMessage &http_request);
-		void answer_request(const HTTPMessage &http_request, int connfd);
+		void answer_request(HTTPMessage &http_request, int connfd);
+		std::string get_full_path(const HTTPMessage &, bool &);
 	private:
 		std::string _host;
 		std::string _port;
@@ -76,7 +80,7 @@ class VirtualServer {
 		unsigned int _client_max_body_size;
 		std::map<std::string, std::string> _error_pages;
 		std::map<std::string, Location> _locations;
+		std::string _msg;
 };
-
 
 #endif //WEBSERV_SERVER_HPP

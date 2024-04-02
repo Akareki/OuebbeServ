@@ -6,12 +6,17 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 09:32:03 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:06:50 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SOCKET_HPP
 # define SOCKET_HPP
+
+#include <iostream>
+#include <arpa/inet.h>
+#include <sys/epoll.h>
+#include <cstdlib>
 #include "VirtualServer.hpp"
 #include "Client.hpp"
 #include "defines.hpp"

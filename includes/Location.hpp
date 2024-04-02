@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:52:07 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:15:34 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,18 @@
 #include "defines.hpp"
 #include <fstream>
 #include <map>
+#include "HTTPMessage.hpp"
+#include <fstream>
+#include <map>
+#include <sys/wait.h>
 #include <string>
+#include <sys/stat.h>
+#include <algorithm>
 #include <vector>
+#define OPTNB 10
 
 class VirtualServer;
+class HTTPMessage;
 
 class Location
 {
@@ -41,6 +49,8 @@ class Location
 		void setClientMaxBodySize(const std::string &);
 		void setErrorPage(const std::string &);
 		void setAllowedMethods(const std::string &);
+		void answer_request(HTTPMessage &, int);
+		std::string get_full_path(const HTTPMessage &, bool &);
 		class LocationException: public std::exception
 		{
 			public:

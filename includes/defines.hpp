@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 10:12:23 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:15:21 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:14:22 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,5 +22,7 @@
 extern unsigned int line_nb;
 
 std::vector<std::string> split(const std::string &str, char delimiter);
+std::vector<std::string> split(const std::string &str, const std::string &delimiter);
+std::string cpp_itoa(int number);
 
 #endif

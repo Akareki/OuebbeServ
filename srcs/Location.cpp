@@ -6,17 +6,19 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:51:47 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:16:09 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
 #include "../includes/VirtualServer.hpp"
 #include <cstdlib>
+#include <dirent.h>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <sys/socket.h>
 #include <vector>
 
 const std::string Location::optNames[OPTNB]
@@ -54,7 +56,6 @@ Location::Location(const VirtualServer &vserv, std::ifstream &config):
 	std::string line;
 	std::string opt_name;
 	std::string opt_value;
-	
 	while (1)
 	{
 		line_nb++;
@@ -153,7 +154,6 @@ void Location::setAllowedMethods(const std::string &opt_value)
 		else
 	  		throw LocationException("wrong method in allow");
 	}
-	
 }
 
 void Location::setOpt(const std::string &opt_name, const std::string &opt_value)
@@ -233,4 +233,206 @@ void Location::display() const
 		std::cout << "	" << it->first << " : " << it->second << std::endl;
 	}
 	std::cout << std::endl;
+}
+
+std::string directory_listing(const std::string &directory)
+{
+	std::string html_body = "<html><body><ul>";
+	DIR *dir = opendir(directory.c_str());
+	struct dirent *s_read;
+
+	if (!dir)
+	{
+		std::cerr << "opendir failed" << std::endl;
+		return ("");
+	}
+	s_read = readdir(dir);
+	while (s_read != NULL)
+	{
+		std::cout << "sread name : " << s_read->d_name << std::endl;
+		html_body += "<a href=\"/";
+		html_body += s_read->d_name;
+		html_body += "\">";
+		html_body += "<li>";
+		html_body += s_read->d_name;
+		html_body += "</li>";
+		html_body += "</a>";
+		html_body += "\n";
+		s_read = readdir(dir);
+	}
+	html_body += "</ul></body><html>";
+	closedir(dir);
+	return html_body;
+}
+
+bool	is_directory(const std::string &path)
+{
+	struct stat statbuf;
+
+	stat(path.c_str(), &statbuf);
+	return S_ISDIR(statbuf.st_mode);
+}
+
+int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_error, const std::string &error_code, const std::map<std::string, std::string> &error_pages)
+{
+	http_response.setStatus(full_error);
+	std::string test;
+
+	try {
+		test = error_pages.at(error_code);
+	} catch (...) {
+
+	}
+
+	std::ifstream error_file(test.c_str());
+	if (error_file && error_file.is_open())
+	{
+		std::stringstream body_buffer;
+		body_buffer << error_file.rdbuf();
+		http_response.setBody(body_buffer.str());
+		return 0;
+	}
+	return -1;
+}
+
+void Location::answer_request(HTTPMessage &http_request, int connfd)
+{
+	bool isindexadded = false;
+	std::string full_path = this->get_full_path(http_request, isindexadded);
+	std::cout << "full_path : " << full_path << std::endl;
+	std::string body;
+	HTTPMessage http_response;
+	if (http_request.getBody().length() > _client_max_body_size)
+	{
+		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
+			http_response.setBody("<h1>413 Request Entity Too Large</h1");
+	}
+	else if (_allowed_methods.at(http_request.getMethod()) == false)
+	{
+		if (setResponseErrorBody(http_response, "405 Method Not Allowed", "405", _error_pages) == -1)
+			http_response.setBody("<h1>405 Method Not Allowed.</h1>");
+	}
+	else if (!_redirect.empty())
+	{
+		http_response.setStatus("301 Moved Permanently");
+		http_response.addHeader("Location", _redirect);
+	}
+	else if (http_request.getMethod() == "GET")
+	{
+		std::ifstream file(full_path.c_str());
+		if (file && file.is_open() && !is_directory(full_path))
+		{
+			if (full_path.find("index.php") != std::string::npos)
+			{
+				char buffer[2000];
+				char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
+				int pipefd[2];
+				if (pipe(pipefd) == -1)
+					throw std::runtime_error("pipe issue");
+				pid_t pid = fork();
+				if (pid == -1)
+					throw std::runtime_error("fork issue");
+				if (pid == 0)
+				{
+					close(pipefd[0]);
+					dup2(pipefd[1], 1);
+					close(pipefd[1]);
+					execve("/usr/bin/php-cgi", list_buffer, NULL);
+				}
+				else
+				{
+					close(pipefd[1]);
+					ssize_t len_read;
+					len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
+					if (len_read == -1)
+						throw std::runtime_error("read issue");
+					buffer[len_read] = '\0';
+					close(pipefd[0]);
+					waitpid(pid, NULL, 0);
+					//send the data
+					std::string body = split(buffer, "\r\n")[2];
+					http_response.addHeader("Content-Type", "text/html");
+					http_response.addHeader("Content-Type", "charset=UTF-8");
+					http_response.setBody(body);
+				}
+			}
+			else
+			{
+				std::stringstream body_buffer;
+				body_buffer << file.rdbuf();
+				body = body_buffer.str();
+				http_response.setBody(body);
+			}
+		}
+		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
+		{
+			body = directory_listing(_root);
+			http_response.setBody(body);
+		}
+		else
+		{
+			if (setResponseErrorBody(http_response, "404 Not Found", "404", _error_pages) == -1)
+				http_response.setBody("<h1>404 Error</h1>");
+		}
+	}
+	else if (http_request.getMethod() == "POST")
+	{
+		int number = 0;
+		std::string filename = http_request.getFileName();
+		if (filename.empty())
+		{
+			while (access(("database/file" + cpp_itoa(number)).c_str(), F_OK) == 0)
+				number++;
+			std::ofstream file(("database/file" + cpp_itoa(number)).c_str());
+			if (file && file.is_open())
+			{
+				std::stringstream body_buffer;
+				body_buffer << http_request.getBody();
+				file << body_buffer.str();
+				file.close();
+			}
+		}
+		else
+		{
+			std::ofstream file(("database/" + filename).c_str(), std::ios::binary);
+			if (file && file.is_open())
+			{
+				std::stringstream body_buffer;
+				body_buffer << http_request.getBody();
+				file << body_buffer.str();
+				file.close();
+			}
+		}
+	}
+	else if (http_request.getMethod() == "DELETE")
+	{
+		if (remove(("database" + http_request.getPath()).c_str()) != 0)
+		{
+			if (setResponseErrorBody(http_response, "404 Not Found", "404", _error_pages) == -1)
+				http_response.setBody("<h1>404 Not Found</h1>");
+		}
+		else
+			http_response.setStatus("204 No Content");
+	}
+
+	//std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
+	//std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
+
+	http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
+
+	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
+	if (size_send == -1)
+		throw std::runtime_error("send issue");
+	//close(connfd);
+}
+
+std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
+{
+	std::string full_path(_root.substr(0, _root.length() - 1) + http_request.getPath());
+	if (full_path[full_path.length() - 1] == '/')
+	{
+		full_path += _index;
+		isindexadded = true;
+	}
+	return (full_path);
 }

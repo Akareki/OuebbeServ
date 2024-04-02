@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/03/21 09:46:04 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:54:49 by aoizel           ###   ########.fr       */
+/*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
+/*   Updated: 2024/04/02 10:19:50 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,13 +28,13 @@ void (VirtualServer::*VirtualServer::optSetters[OPTNB])(const std::string &) =
 
 VirtualServer::VirtualServer() :
 		_host(""), _port("8080"), _server_name(), _root("public_html"),
-		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(1000000)
 {
 }
 
 VirtualServer::VirtualServer(std::ifstream &config):
 		_host(""), _port("8080"), _server_name(), _root(),
-		_index("index.html"), _isindexadded(false), _autoindex(false), _client_max_body_size(10000)
+		_index("index.html"), _autoindex(false), _client_max_body_size(1000000)
 {
 	std::string line;
 	std::string opt_name;
@@ -72,7 +72,6 @@ VirtualServer::VirtualServer(std::ifstream &config):
 		Location loc(*this);
 		_locations["/"] = loc;
 	}
-	
 }
 
 const std::string &VirtualServer::getHost() const
@@ -259,11 +258,11 @@ void VirtualServer::display() const
 	{
 		std::cout << "-> LOCATION: " << it->first << std::endl;
 		it->second.display();
-	std::cout << std::endl;
+		std::cout << std::endl;
 	}
 }
 
-std::string directory_listing(const std::string &directory)
+/*std::string directory_listing(const std::string &directory)
 {
 	std::string html_body = "<html><body><ul>";
  	DIR *dir = opendir(directory.c_str());
@@ -291,44 +290,65 @@ std::string directory_listing(const std::string &directory)
 	html_body += "</ul></body><html>";
 	closedir(dir);
 	return html_body;
-}
+}*/
 
-void	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
+bool	does_path_matches(const std::string &request_path, const std::string &location)
 {
-	std::string full_path = this->get_full_path(http_request);
+	int i = 0;
 
-	std::cout << "full_path : " << full_path << std::endl;
-	std::string body;
-	if (http_request.getMethod() == "GET")
+	while (location[i])
 	{
-		std::ifstream file1(full_path.c_str());
-		if (file1)
+		if (location[i] != request_path[i])
 		{
-			std::stringstream body_buffer;
-			body_buffer << file1.rdbuf();
-			body = body_buffer.str();
+			return (false);
 		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (_isindexadded && http_request.getPath() == "/")))
-			body = directory_listing(_root);
+		i++;
 	}
-	HTTPMessage http_response("200", body);
-	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-	if (size_send == -1)
-		throw std::exception();
-	std::cout << "size_send : " << size_send << std::endl;
-	close(connfd);
+	return (true);
 }
 
-std::string VirtualServer::get_full_path(const HTTPMessage &http_request)
+//gives the length of the location, NOT in number of characters
+int location_length(const std::string &location)
 {
-	if (DEBUG_MODE == 1)
-		std::cout << http_request.getMessage() << std::endl;
+	int i = 0;
+	int count = 0;
 
+	while (location[i])
+	{
+		if (location[i] == '/')
+			count++;
+		i++;
+	}
+	if (location[i - 1] != '/')
+		count++;
+	return (count);
+}
+
+void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
+{
+	int longest_length = 0;
+	std::string longest_location = "/";
+	for (std::map<std::string, Location>::iterator it = _locations.begin(); it != _locations.end(); it++)
+	{
+		if (does_path_matches(http_request.getPath(), it->first))
+		{
+			if (location_length(it->first) > longest_length)
+			{
+				longest_length = location_length(it->first);
+				longest_location = it->first;
+			}
+		}
+	}
+	_locations[longest_location].answer_request(http_request, connfd);
+}
+
+std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
+{
 	std::string full_path(_root + http_request.getPath());
 	if (full_path[full_path.length() - 1] == '/')
 	{
 		full_path += _index;
-		_isindexadded = true;
+		isindexadded = true;
 	}
 	return (full_path);
 }

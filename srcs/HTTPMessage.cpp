@@ -6,11 +6,12 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 10:54:17 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 10:11:47 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/HTTPMessage.hpp"
+#include <algorithm>
 #include <sstream>
 #define CRLF "\r\n"
 #include <map>
@@ -30,12 +31,17 @@ void	fill_map(const std::string &request, std::map<std::string, std::vector<std:
 		if (line.find(' ') == std::string::npos || line.find('\r') == std::string::npos)
 			continue ;
 		std::string second_half = line.substr(line.find(' ') + 1, line.find('\r') - 6);
-		headers[first_half].push_back(second_half);
+		std::vector<std::string> splited_second_half = split(second_half, ';');
+		for (std::vector<std::string>::iterator it = splited_second_half.begin(); it != splited_second_half.end(); it++)
+		{
+			headers[first_half].push_back(*it);
+		}
 	}
 }
 
-HTTPMessage::HTTPMessage()
+HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK")
 {
+	this->addHeader("server", "webserv");
 }
 
 HTTPMessage::HTTPMessage(const std::string &request)
@@ -48,6 +54,38 @@ HTTPMessage::HTTPMessage(const std::string &request)
 	_method = first_line[0];
 	_path = first_line[1];
 	fill_map(request, _headers);
+	//parse body (POST requests usually have a body)
+	const std::map<std::string, std::vector<std::string> > &requestMap = _headers;
+	try {
+		const std::vector<std::string> &contentType = requestMap.at("Content-Type");
+
+		if (std::find(contentType.begin(),
+					  contentType.end(), "multipart/form-data") != contentType.end())
+		{
+			std::vector<std::string> splited_request = split(request, "\r\n\r\n");
+			_file_header = splited_request[1];
+			_body = splited_request[2];
+		}
+		else
+		{
+			std::vector<std::string> splited_request = split(request, "\r\n\r\n");
+			_body = splited_request[1];
+		}
+
+	} catch (std::exception &e) {
+	}
+}
+
+std::string	HTTPMessage::getFileName() const
+{
+	size_t index_begin = _file_header.find("filename=\"", 0);
+	if (index_begin == std::string::npos)
+		return ("");
+	size_t index_end = _file_header.find("\"", index_begin + 10);
+	if (index_end == std::string::npos)
+		return ("");
+	std::string filename = _file_header.substr(index_begin + 10, index_end - (index_begin + 10));
+	return (filename);
 }
 
 const std::map<std::string, std::vector<std::string> > &HTTPMessage::getHeaders() const
@@ -94,14 +132,23 @@ std::string HTTPMessage::getMessage() const
 	msg += _http_version + " " + _status + CRLF;
 	for (std::map<std::string, std::vector<std::string> >::const_iterator it = _headers.begin(); it != _headers.end(); it++)
 	{
+		msg += it->first + ": ";
 		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
-			msg += it->first + ": " + *vit + CRLF;
+			msg += *vit;
+			if (vit != it->second.end() - 1)
+				msg += "; ";
 		}
+		msg += CRLF;
 	}
 	msg += CRLF;
 	msg += _body;
 	return (msg);
+}
+
+const std::string &HTTPMessage::getBody() const
+{
+	return _body;
 }
 
 const std::string &HTTPMessage::getMethod() const
