@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:15:34 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:58:37 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ class Location
 		void setClientMaxBodySize(const std::string &);
 		void setErrorPage(const std::string &);
 		void setAllowedMethods(const std::string &);
-		void answer_request(HTTPMessage &, int);
+		int answer_request(HTTPMessage &, int);
 		std::string get_full_path(const HTTPMessage &, bool &);
 		class LocationException: public std::exception
 		{

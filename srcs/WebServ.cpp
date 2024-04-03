@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/25 11:33:23 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/03 08:54:52 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,22 +103,11 @@ WebServ::WebServException::~WebServException() throw()
 
 void WebServ::start()
 {
-	/*Socket socket("127.0.0.1", "8082");
-	Socket socket2("127.0.0.1", "8083");
-	TcpListener tcpListener3(8084);
-	TcpListener tcpListener4(8085);
-	TcpListener tcpListener5(8086);*/
-
-
-
 	while (true)
 	{
 		for (std::vector<Socket>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
 		{
 			it->http_listen();
 		}
-		/*tcpListener3.http_listen();
-		tcpListener4.http_listen();
-		tcpListener5.http_listen();*/
 	}
 }

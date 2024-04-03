@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:19:50 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/02 13:56:37 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -324,7 +324,7 @@ int location_length(const std::string &location)
 	return (count);
 }
 
-void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
+int	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 {
 	int longest_length = 0;
 	std::string longest_location = "/";
@@ -339,7 +339,7 @@ void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 			}
 		}
 	}
-	_locations[longest_location].answer_request(http_request, connfd);
+	return (_locations[longest_location].answer_request(http_request, connfd));
 }
 
 std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)

@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:49:17 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/03 09:16:51 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
+#include <map>
 #include <netinet/in.h>
 #include <ostream>
 #include <unistd.h>
@@ -60,7 +61,6 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 	_epollfd = epoll_create1(0);
 	if (_epollfd == -1)
 		throw std::runtime_error("epoll create issue");
-
 	_event.events = EPOLLIN;
 	_event.data.fd = _sockfd;
 	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
@@ -87,6 +87,7 @@ Socket &Socket::operator=(const Socket &other)
 	_servers = other._servers;
 	_epollfd = other._epollfd;
 	_event = other._event;
+	_clients = other._clients;
 	for (int i = 0; i < 10; i++)
 		_events[i] = other._events[i];
 
@@ -148,28 +149,24 @@ void	Socket::answer_request(const HTTPMessage &request, int connfd)
 		http_response.setBody("<h1>400 Bad Request</h1>");
 		http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
 		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-		if (size_send == -1)
-			throw std::runtime_error("send issue");
+		if (size_send <= 0)
+			_clients.erase(connfd);
 		return ;
 	}
-	bool answered = false;
 	std::string server_name;
 	try {
 		server_name = http_request.getHeaders().at("Host")[0];
 	} catch (...) {
 
 	}
-	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	std::vector<VirtualServer>::iterator it;
+	for (it = _servers.end(); it != _servers.begin(); --it)
 	{
 		if (server_name == it->getServerName())
-		{
-			it->answer_request(http_request, connfd);
-			answered = true;
 			break;
-		}
 	}
-	if (!answered || server_name.empty())
-		_servers[0].answer_request(http_request, connfd);
+	if (it->answer_request(http_request, connfd) <= 0)
+		_clients.erase(connfd);
 }
 
 void Socket::http_listen()
@@ -188,35 +185,39 @@ void Socket::http_listen()
 			connfd = accept_connection(_sockfd);
 			if (connfd == -1)
 			{
-				connfd = accept_connection(_sockfd);
-				if (connfd == -1)
-				{
-					std::cerr << "accept connection failed" << std::endl;
-					throw std::runtime_error("accept issue");
-				}
-				_event.events = EPOLLIN | EPOLLOUT;
-				_event.data.fd = connfd;
-				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
-				{
-					std::cerr << "epoll ctl failed" << std::endl;
-					throw std::runtime_error("epoll ctl issue");
-				}
-				_clients[connfd] = Client(connfd);
+				std::cerr << "accept connection failed" << std::endl;
+				throw std::runtime_error("accept issue");
 			}
-			else 
+			_event.events = EPOLLIN | EPOLLOUT;
+			_event.data.fd = connfd;
+			if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
 			{
-				if (_events[n].events & EPOLLIN)
+				std::cerr << "epoll ctl failed" << std::endl;
+				throw std::runtime_error("epoll ctl issue");
+			}
+			_clients[connfd].setFd(connfd);
+		}
+		else 
+		{
+			if (_events[n].events & EPOLLIN)
+			{
+				if (_clients.at(_events[n].data.fd).readRequest() == -1)
 				{
-					if (_clients.at(_events[n].data.fd).readRequest() == -1)
-						_clients.erase(_events[n].data.fd);
+					_clients.erase(_events[n].data.fd);
 				}
-				else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
-				{
-					HTTPMessage request = _clients.at(_events[n].data.fd).getRequest();
-					if (!request.isBadRequest())
-						this->answer_request(request, _events[n].data.fd);
-				}
+			}
+			else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
+			{
+				HTTPMessage request = _clients.at(_events[n].data.fd).getRequest();
+				this->answer_request(request, _events[n].data.fd);
 			}
 		}
+	}
+	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end();)
+	{
+		if (it->second.isTimedOut())
+			_clients.erase(it++);
+		else
+			++it;
 	}
 }

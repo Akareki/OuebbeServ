@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:16:09 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/03 08:59:19 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -295,7 +295,7 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
-void Location::answer_request(HTTPMessage &http_request, int connfd)
+int Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
 	std::string full_path = this->get_full_path(http_request, isindexadded);
@@ -349,7 +349,6 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 					buffer[len_read] = '\0';
 					close(pipefd[0]);
 					waitpid(pid, NULL, 0);
-					//send the data
 					std::string body = split(buffer, "\r\n")[2];
 					http_response.addHeader("Content-Type", "text/html");
 					http_response.addHeader("Content-Type", "charset=UTF-8");
@@ -414,16 +413,9 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 		else
 			http_response.setStatus("204 No Content");
 	}
-
-	//std::cout << "REQUEST : " << http_request.getMessage() << std::endl;
-	//std::cout << "RESPONSE : " << http_response.getMessage() << std::endl;
-
 	http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
-
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-	if (size_send == -1)
-		throw std::runtime_error("send issue");
-	//close(connfd);
+	return (size_send);
 }
 
 std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
