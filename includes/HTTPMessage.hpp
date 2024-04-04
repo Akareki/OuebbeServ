@@ -32,6 +32,7 @@ class HTTPMessage
 		bool			isBadRequest() const;
 		const std::string &getMethod() const;
 		const std::string &getPath() const;
+		const std::string &getUrlParams() const;
 		const std::string &getBody() const;
 		std::string getFileName() const; // relevant only for multipart/form-data contenttype
 		const std::map<std::string, std::vector<std::string> > &getHeaders() const;
@@ -45,6 +46,7 @@ class HTTPMessage
 		std::string _http_version;
 		std::string _method;
 		std::string _path;
+		std::string _url_params;
 		std::string _status;
 		std::string _file_header; //relevant only for multipart/form-data contenttype
 		std::map<std::string, std::vector<std::string> > _headers;

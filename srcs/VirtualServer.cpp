@@ -342,14 +342,3 @@ void	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
 	}
 	_locations[longest_location].answer_request(http_request, connfd);
 }
-
-std::string VirtualServer::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
-{
-	std::string full_path(_root + http_request.getPath());
-	if (full_path[full_path.length() - 1] == '/')
-	{
-		full_path += _index;
-		isindexadded = true;
-	}
-	return (full_path);
-}

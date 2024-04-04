@@ -295,6 +295,50 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
+void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMessage &http_request)
+{
+	char buffer[2000];
+	char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
+
+	(void)http_request;
+	//std::string query_string = http_request.getUrlParams();
+	//std::cout << query_string << std::endl;
+	//std::string env_query = ("QUERY_STRING=" + query_string);
+	char *env[] = {
+			const_cast<char*>("REQUEST_METHOD=GET"),
+			NULL
+	};
+	int pipefd[2];
+	if (pipe(pipefd) == -1)
+		throw std::runtime_error("pipe issue");
+	pid_t pid = fork();
+	if (pid == -1)
+		throw std::runtime_error("fork issue");
+	if (pid == 0)
+	{
+		close(pipefd[0]);
+		dup2(pipefd[1], 1);
+		close(pipefd[1]);
+		execve("/usr/bin/php-cgi", list_buffer, env);
+	}
+	else
+	{
+		close(pipefd[1]);
+		ssize_t len_read;
+		len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
+		if (len_read == -1)
+			throw std::runtime_error("read issue in location.cpp");
+		buffer[len_read] = '\0';
+		close(pipefd[0]);
+		waitpid(pid, NULL, 0);
+		//send the data
+		std::string body = split(buffer, "\r\n")[2];
+		http_response.addHeader("Content-Type", "text/html");
+		http_response.addHeader("Content-Type", "charset=UTF-8");
+		http_response.setBody(body);
+	}
+}
+
 void Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
@@ -323,39 +367,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 		if (file && file.is_open() && !is_directory(full_path))
 		{
 			if (full_path.find("index.php") != std::string::npos)
-			{
-				char buffer[2000];
-				char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
-				int pipefd[2];
-				if (pipe(pipefd) == -1)
-					throw std::runtime_error("pipe issue");
-				pid_t pid = fork();
-				if (pid == -1)
-					throw std::runtime_error("fork issue");
-				if (pid == 0)
-				{
-					close(pipefd[0]);
-					dup2(pipefd[1], 1);
-					close(pipefd[1]);
-					execve("/usr/bin/php-cgi", list_buffer, NULL);
-				}
-				else
-				{
-					close(pipefd[1]);
-					ssize_t len_read;
-					len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
-					if (len_read == -1)
-						throw std::runtime_error("read issue");
-					buffer[len_read] = '\0';
-					close(pipefd[0]);
-					waitpid(pid, NULL, 0);
-					//send the data
-					std::string body = split(buffer, "\r\n")[2];
-					http_response.addHeader("Content-Type", "text/html");
-					http_response.addHeader("Content-Type", "charset=UTF-8");
-					http_response.setBody(body);
-				}
-			}
+				handleCGI(http_response, get_full_path(http_request, isindexadded), http_request);
 			else
 			{
 				std::stringstream body_buffer;

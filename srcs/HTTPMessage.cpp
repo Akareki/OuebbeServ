@@ -70,8 +70,15 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 	std::vector<std::string> first_line = split(line, ' ');
 
 	_method = first_line[0];
-	_path = first_line[1];
 
+	size_t index_interr = first_line[1].find('?');
+	if (index_interr == std::string::npos)
+		_path = first_line[1];
+	else
+		_path = first_line[1].substr(0, index_interr);
+
+	if (index_interr != std::string::npos)
+		_url_params = _path.substr(index_interr, _path.length());
 	//parse headers
 	fill_map(request, _headers);
 
@@ -180,6 +187,11 @@ const std::string &HTTPMessage::getMethod() const
 const std::string &HTTPMessage::getPath() const
 {
 	return _path;
+}
+
+const std::string &HTTPMessage::getUrlParams() const
+{
+	return _url_params;
 }
 
 void HTTPMessage::setStatus(const std::string &status)

@@ -56,7 +56,6 @@ public:
 	const static std::string optNames[OPTNB];
 	static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 	void display() const;
-	std::string			get_full_path(const HTTPMessage &http_request, bool &isindexadded);
 	void				answer_request(HTTPMessage &http_request, int connfd);
 private:
 	std::string _host;
