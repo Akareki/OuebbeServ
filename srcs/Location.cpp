@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 08:44:06 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 10:08:38 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,13 +23,13 @@
 
 const std::string Location::optNames[OPTNB]
 	= {"root", "index", "autoindex", "return", "client_max_body_size",
-		"error_page", "allow", "cgi"};
+		"error_page", "allow", "cgi", "set_cookie", "cookie"};
 
 void (Location::*Location::optSetters[OPTNB])(const std::string &) =
 	{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
 		&Location::setRedirect, &Location::setClientMaxBodySize,
 		&Location::setErrorPage, &Location::setAllowedMethods,
-		&Location::setCGI};
+		&Location::setCGI, &Location::setSetCookie, &Location::setCookie};
 
 Location::Location()
 {
@@ -157,11 +157,23 @@ void Location::setAllowedMethods(const std::string &opt_value)
 	}
 }
 
+void Location::setSetCookie(const std::string &opt_value)
+{
+	_set_cookie.push_back(opt_value);
+}
+
 void Location::setCGI(const std::string &opt_value)
 {
 	if (opt_value.find(" ") == std::string::npos)
 		throw LocationException("wrong value for cgi");
 	_cgi[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
+}
+
+void Location::setCookie(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw LocationException("wrong value for cookie");
+	_cookie[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
 }
 
 void Location::setOpt(const std::string &opt_name, const std::string &opt_value)
