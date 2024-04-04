@@ -18,10 +18,25 @@
 
 void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > &headers)
 {
-	std::string line;
+	/*std::string line;
 	std::istringstream request_stream(request);
-	std::getline(request_stream, line, '\n');
-	while (std::getline(request_stream, line, '\n'))
+	std::getline(request_stream, line, '\n')*/
+	std::vector<std::string> splited_request = split(request, "\r\n");
+	for (std::vector<std::string>::iterator it = splited_request.begin(); it != splited_request.end(); it++)
+	{
+		if ((*it).find(':') == std::string::npos)
+			continue ;
+		std::string first_half = (*it).substr(0, (*it).find(':'));
+		if ((*it).find(' ') == std::string::npos)
+			continue ;
+		std::string second_half = (*it).substr((*it).find(' ') + 1);
+		std::vector<std::string> splited_second_half = split(second_half, ';');
+		for (std::vector<std::string>::iterator ita = splited_second_half.begin(); ita != splited_second_half.end(); ita++)
+		{
+			headers[first_half].push_back(*ita);
+		}
+	}
+	/*while (std::getline(request_stream, line, "\r\n"))
 	{
 		if (line.find(':') == std::string::npos)
 			continue ;
@@ -34,7 +49,7 @@ void	fill_map(const std::string &request, std::map<std::string, std::vector<std:
 		{
 			headers[first_half].push_back(*it);
 		}
-	}
+	}*/
 }
 
 HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK")
@@ -72,6 +87,7 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 	_method = first_line[0];
 
 	size_t index_interr = first_line[1].find('?');
+	std::cout << "first line 1 " << first_line[1] << std::endl;
 	if (index_interr == std::string::npos)
 		_path = first_line[1];
 	else
@@ -79,6 +95,7 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 	std::cout << "path " << _path << std::endl;
 	if (index_interr != std::string::npos)
 		_url_params = first_line[1].substr(index_interr + 1);
+	std::cout << "url params" << _url_params << std::endl;
 	//parse headers
 	fill_map(request, _headers);
 
@@ -143,8 +160,11 @@ HTTPMessage &HTTPMessage::operator=(const HTTPMessage &other)
 	_method = other._method;
 	_path = other._path;
 	_status = other._status;
+	_url_params = other._url_params;
+	_file_header = other._file_header;
 	_headers = other._headers;
 	_body = other._body;
+	_is_bad_request = other._is_bad_request;
 	return (*this);
 }
 

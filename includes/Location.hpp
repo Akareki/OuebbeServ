@@ -47,6 +47,9 @@ public:
 	void setClientMaxBodySize(const std::string &);
 	void setErrorPage(const std::string &);
 	void setAllowedMethods(const std::string &);
+	void setCGI(const std::string &);
+	void setSetCookie(const std::string &);
+	void setCookie(const std::string &);
 	class LocationException: public std::exception
 	{
 	public:
@@ -60,7 +63,7 @@ public:
 	const static std::string optNames[OPTNB];
 	static void (Location::*optSetters[OPTNB])(const std::string &);
 	int answer_request(HTTPMessage &http_request, int connfd);
-	std::string			get_full_path(const HTTPMessage &http_request, bool &isindexadded);
+	std::string			get_full_path(const HTTPMessage &http_request, bool &isindexadded, const std::string &index);
 	void display() const;
 private:
 	std::string _root;

@@ -83,7 +83,7 @@ int Client::readRequest()
 	if (len_read <= 0)
 		return (len_read);
 	buffer[len_read] = '\0';
-	std::cout << "Request: " << buffer << std::endl;
+	//std::cout << "Request: " << buffer << std::endl;
 	_request = HTTPMessage(buffer);
 	_ready = true;
 	return (0);

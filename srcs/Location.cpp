@@ -21,12 +21,13 @@
 
 const std::string Location::optNames[OPTNB]
 		= {"root", "index", "autoindex", "return", "client_max_body_size",
-		   "error_page", "allow"};
+		   "error_page", "allow", "cgi", "set_cookie", "cookie"};
 
 void (Location::*Location::optSetters[OPTNB])(const std::string &) =
 		{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
 		 &Location::setRedirect, &Location::setClientMaxBodySize,
-		 &Location::setErrorPage, &Location::setAllowedMethods};
+		 &Location::setErrorPage, &Location::setAllowedMethods,
+		 &Location::setCGI, &Location::setSetCookie, &Location::setCookie};
 
 Location::Location()
 {
@@ -54,7 +55,6 @@ Location::Location(const VirtualServer &vserv, std::ifstream &config):
 	std::string line;
 	std::string opt_name;
 	std::string opt_value;
-
 	while (1)
 	{
 		line_nb++;
@@ -85,6 +85,8 @@ Location::Location(const Location &other)
 
 Location &Location::operator=(const Location &other)
 {
+	if (this == &other)
+		return (*this);
 	_root = other._root;
 	_index = other._index;
 	_redirect = other._redirect;
@@ -93,6 +95,9 @@ Location &Location::operator=(const Location &other)
 	_client_max_body_size = other._client_max_body_size;
 	_error_pages = other._error_pages;
 	_allowed_methods = other._allowed_methods;
+	_cgi = other._cgi;
+	_set_cookie = other._set_cookie;
+	_cookie = other._cookie;
 	return(*this);
 }
 
@@ -153,7 +158,25 @@ void Location::setAllowedMethods(const std::string &opt_value)
 		else
 			throw LocationException("wrong method in allow");
 	}
+}
 
+void Location::setSetCookie(const std::string &opt_value)
+{
+	_set_cookie.push_back(opt_value);
+}
+
+void Location::setCGI(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw LocationException("wrong value for cgi");
+	_cgi[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
+}
+
+void Location::setCookie(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw LocationException("wrong value for cookie");
+	_cookie[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
 }
 
 void Location::setOpt(const std::string &opt_name, const std::string &opt_value)
@@ -232,6 +255,21 @@ void Location::display() const
 	{
 		std::cout << "	" << it->first << " : " << it->second << std::endl;
 	}
+	std::cout << "CGI: " << _cgi.size() << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _cgi.begin(); it != _cgi.end(); it++)
+	{
+		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << "Cookies: " << _cookie.size() << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _cookie.begin(); it != _cookie.end(); it++)
+	{
+		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << "Set Cookies: " << _set_cookie.size() << std::endl;
+	for (std::vector<std::string>::const_iterator it = _set_cookie.begin(); it != _set_cookie.end(); it++)
+	{
+		std::cout << "	" << *it << std::endl;
+	}
 	std::cout << std::endl;
 }
 
@@ -295,12 +333,11 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
-void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMessage &http_request)
+void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
 {
 	char buffer[2000];
-	char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
-
-	(void)http_request;
+	char *list_buffer[100] = {const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
+	char *list_buffer_py[100] = {const_cast<char*>("/usr/bin/python3"), const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
 	std::string query_string = http_request.getUrlParams();
 	std::string env_query = ("QUERY_STRING=" + query_string);
 	std::cout << env_query << std::endl;
@@ -319,7 +356,10 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMes
 		close(pipefd[0]);
 		dup2(pipefd[1], 1);
 		close(pipefd[1]);
-		execve("/usr/bin/php-cgi", list_buffer, env);
+		if (cgi == "php")
+			execve(path_cgi.c_str(), list_buffer, env);
+		else
+			execve("/usr/bin/python3", list_buffer_py, env);
 	}
 	else
 	{
@@ -342,7 +382,26 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMes
 int Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
-	std::string full_path = this->get_full_path(http_request, isindexadded);
+	std::string temp_index;
+	bool iscookieadded = false;
+	try {
+		for (std::vector<std::string>::const_iterator it = http_request.getHeaders().at("Cookie").begin(); it != http_request.getHeaders().at("Cookie").end(); it++)
+		{
+			if (*it == "visited")
+			{
+				temp_index = _cookie["visited"];
+				iscookieadded = true;
+				break ;
+			}
+		}
+		if (iscookieadded == false)
+		{
+			temp_index = _index;
+		}
+	} catch (...) {
+		temp_index = _index;
+	}
+	std::string full_path = this->get_full_path(http_request, isindexadded, temp_index);
 	std::cout << "full_path : " << full_path << std::endl;
 	std::string body;
 	HTTPMessage http_response;
@@ -353,7 +412,10 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 	} catch (...) {
 
 	}
-
+	for (std::vector<std::string>::iterator it = _set_cookie.begin(); it != _set_cookie.end(); it++)
+	{
+		http_response.addHeader("Set-Cookie", *it);
+	}
 	if (http_request.getBody().length() > _client_max_body_size)
 	{
 		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
@@ -374,14 +436,20 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 		std::ifstream file(full_path.c_str());
 		if (file && file.is_open() && !is_directory(full_path))
 		{
-			if (full_path.find("index.php") != std::string::npos)
-				handleCGI(http_response, get_full_path(http_request, isindexadded), http_request);
-			else
+			size_t index = full_path.find_last_of(".");
+			if (index != std::string::npos)
 			{
-				std::stringstream body_buffer;
-				body_buffer << file.rdbuf();
-				body = body_buffer.str();
-				http_response.setBody(body);
+				if (!_cgi["php"].empty() && full_path.substr(index + 1 ) == "php")
+					handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["php"], "php");
+				else if (!_cgi["python"].empty() && full_path.substr(index + 1 ) == "py")
+					handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["python"], "py");
+				else
+				{
+					std::stringstream body_buffer;
+					body_buffer << file.rdbuf();
+					body = body_buffer.str();
+					http_response.setBody(body);
+				}
 			}
 		}
 		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
@@ -426,8 +494,10 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 		std::ifstream file(full_path.c_str());
 		if (file && file.is_open() && !is_directory(full_path))
 		{
-			if (full_path.find("index.php") != std::string::npos)
-				handleCGI(http_response, get_full_path(http_request, isindexadded), http_request);
+			if (!_cgi["php"].empty())
+				handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["php"], "php");
+			else if (!_cgi["python"].empty())
+				handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["python"], "py");
 			else
 			{
 				std::stringstream body_buffer;
@@ -457,12 +527,12 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 	return (size_send);
 }
 
-std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
+std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded, const std::string &index)
 {
 	std::string full_path(_root.substr(0, _root.length() - 1) + http_request.getPath());
 	if (full_path[full_path.length() - 1] == '/')
 	{
-		full_path += _index;
+		full_path += index;
 		isindexadded = true;
 	}
 	return (full_path);
