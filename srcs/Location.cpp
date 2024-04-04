@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 10:08:38 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 13:25:15 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,8 @@ Location::Location(const Location &other)
 
 Location &Location::operator=(const Location &other)
 {
+	if (this == &other)
+		return (*this);
 	_root = other._root;
 	_index = other._index;
 	_redirect = other._redirect;
@@ -95,6 +97,9 @@ Location &Location::operator=(const Location &other)
 	_client_max_body_size = other._client_max_body_size;
 	_error_pages = other._error_pages;
 	_allowed_methods = other._allowed_methods;
+	_cgi = other._cgi;
+	_set_cookie = other._set_cookie;
+	_cookie = other._cookie;
 	return(*this);
 }
 
@@ -159,11 +164,13 @@ void Location::setAllowedMethods(const std::string &opt_value)
 
 void Location::setSetCookie(const std::string &opt_value)
 {
+	std::cout << "hit" << opt_value << std::endl;
 	_set_cookie.push_back(opt_value);
 }
 
 void Location::setCGI(const std::string &opt_value)
 {
+	std::cout << "hit" << opt_value << std::endl;
 	if (opt_value.find(" ") == std::string::npos)
 		throw LocationException("wrong value for cgi");
 	_cgi[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
@@ -171,6 +178,7 @@ void Location::setCGI(const std::string &opt_value)
 
 void Location::setCookie(const std::string &opt_value)
 {
+	std::cout << "hit" << opt_value << std::endl;
 	if (opt_value.find(" ") == std::string::npos)
 		throw LocationException("wrong value for cookie");
 	_cookie[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
@@ -251,6 +259,21 @@ void Location::display() const
 	for (std::map<std::string, bool>::const_iterator it = _allowed_methods.begin(); it != _allowed_methods.end(); it++)
 	{
 		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << "CGI: " << _cgi.size() << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _cgi.begin(); it != _cgi.end(); it++)
+	{
+		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << "Cookies: " << _cookie.size() << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _cookie.begin(); it != _cookie.end(); it++)
+	{
+		std::cout << "	" << it->first << " : " << it->second << std::endl;
+	}
+	std::cout << "Set Cookies: " << _set_cookie.size() << std::endl;
+	for (std::vector<std::string>::const_iterator it = _set_cookie.begin(); it != _set_cookie.end(); it++)
+	{
+		std::cout << "	" << *it << std::endl;
 	}
 	std::cout << std::endl;
 }

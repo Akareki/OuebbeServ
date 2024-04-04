@@ -6,7 +6,7 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/04/02 09:45:41 by aoizel           ###   ########.fr        #
+#    Updated: 2024/04/04 13:16:59 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,13 +17,13 @@ RAW_SOURCES		=	main.cpp VirtualServer.cpp Location.cpp WebServ.cpp Socket.cpp ut
 
 SOURCES_DIR		=	srcs/
 
-SOURCES			=	$(addprefix $(SOURCES_DIR), $(RAW_SOURCES))
+SOURCES			=	$(addprefix $(SOURCES_DIR),$(RAW_SOURCES))
 
 INCLUDES_DIR	=	includes/
 
-CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98
+CXX				=	c++
 
-CPP				=	$(CXX) $(CPP_FLAGS)
+CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98
 
 OBJECTS_DIR		=	.objs/
 
@@ -31,20 +31,24 @@ OBJECTS			=	$(addprefix $(OBJECTS_DIR),$(RAW_SOURCES:.cpp=.o))
 
 DEPENDENCIES	=	Makefile
 
-all:				$(OBJECTS_DIR)
+DEPS			=	$(OBJECTS:.o=.d)
+
+DEPFLAGS		=	-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
+
+CPP				=	$(CXX) $(CPP_FLAGS)
+
+
+all:				$(OBJECTS_DIR) $(DEPDIR)
 						make $(NAME)
 
 $(NAME):			$(OBJECTS_DIR) $(OBJECTS)
 						$(CPP) $(OBJECTS) -o $@
 
 $(OBJECTS_DIR):
-					mkdir -p .objs/
+					mkdir -p $@
 
 $(OBJECTS_DIR)%.o:	$(SOURCES_DIR)%.cpp $(DEPENDENCIES)
-						$(CPP) -c $< -I$(INCLUDES_DIR) -o $@
-
-$(OBJECTS_DIR)%.d: %.cpp | $(OBJECTS_DIR)
-						$(CPP) $< -MT -I$(INCLUDES_DIR) $(OBJECTS_DIR)$(<:.cpp=.o) -MM -MP -MF $@
+						$(CPP) -c -MMD $< -I$(INCLUDES_DIR) -o $@
 
 clean:
 						rm -rf $(OBJECTS_DIR)
@@ -57,4 +61,4 @@ re:					fclean
 
 .PHONY:				all clean fclean re
 
--include $(OBJECTS:.o=.d)
+-include $(DEPS)
