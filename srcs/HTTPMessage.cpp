@@ -13,7 +13,7 @@
 #include "../includes/HTTPMessage.hpp"
 #define CRLF "\r\n"
 #include <map>
-#include <string>
+#include <algorithm>
 #include <vector>
 
 void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > &headers)
@@ -76,9 +76,9 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 		_path = first_line[1];
 	else
 		_path = first_line[1].substr(0, index_interr);
-
+	std::cout << "path " << _path << std::endl;
 	if (index_interr != std::string::npos)
-		_url_params = _path.substr(index_interr, _path.length());
+		_url_params = first_line[1].substr(index_interr + 1);
 	//parse headers
 	fill_map(request, _headers);
 

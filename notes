@@ -2,9 +2,7 @@
 
 
 -gérer les cookies (Set-Cookie envoyé selon fichier de configuration, modifier index selon cookie)
--chunked requests ?
 -utiliser le parsing pour le cgi au lieu de juste regarder "index.php"
--régler unitialized / segfault
 
 
 

@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 #include <cstdlib>
 #include "VirtualServer.hpp"
+#include "HTTPMessage.hpp"
 
 class VirtualServer;
 
@@ -21,18 +22,19 @@ public:
 	const std::string &getPort() const;
 	Socket &operator=(const Socket&);
 	void addServer(VirtualServer);
+	void setRunning();
 	class SocketException: public std::exception
 	{
 		virtual const char *what() const throw();
 	};
 	void display();
-	//Socket(const std::vector<std::string> &server_names, int server_amount) {(void)server_names; (void)server_names;};
 	void	http_listen();
 	void	parse_request(const std::string &request);
-	void	answer_request(const std::string &request, int connfd);
+	void	answer_request(const HTTPMessage &request, int connfd);
 private:
-	Socket();
+	bool _running;
 	std::map<int, Client> _clients;
+	Socket();
 	int 	_epollfd;
 	int 	_sockfd;
 	std::string _host;
@@ -42,5 +44,4 @@ private:
 	struct epoll_event _events[10];
 };
 
-
-#endif //WEBSERV_TCPLISTENER_HPP
+#endif //WEBSERV_SOCKET_HPP

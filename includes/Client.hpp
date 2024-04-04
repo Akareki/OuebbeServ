@@ -13,23 +13,28 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
+#define CLIENT_TIMEOUT 5
+#include "HTTPMessage.hpp"
 #include <string>
+
 class Client
 {
-	public:
-		Client();
-		Client(int);
-		Client(const Client&);
-		~Client();
-		Client &operator=(const Client&);
-		int getFd() const;
-		const std::string &getRequest() const;
-		bool isReady();
-		void readRequest();
-	private:
-		bool _ready;
-		int _connfd;
-		std::string _request;
+public:
+	Client();
+	Client(const Client&);
+	~Client();
+	Client &operator=(const Client&);
+	void setFd(int fd);
+	int getFd() const;
+	const HTTPMessage &getRequest() const;
+	bool isReady();
+	bool isTimedOut() const;
+	int readRequest();
+private:
+	bool _ready;
+	int _connfd;
+	HTTPMessage _request;
+	time_t _last_activity;
 };
 
 #endif

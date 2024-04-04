@@ -301,11 +301,11 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMes
 	char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
 
 	(void)http_request;
-	//std::string query_string = http_request.getUrlParams();
-	//std::cout << query_string << std::endl;
-	//std::string env_query = ("QUERY_STRING=" + query_string);
+	std::string query_string = http_request.getUrlParams();
+	std::string env_query = ("QUERY_STRING=" + query_string);
+	std::cout << env_query << std::endl;
 	char *env[] = {
-			const_cast<char*>("REQUEST_METHOD=GET"),
+			const_cast<char*>(env_query.c_str()),
 			NULL
 	};
 	int pipefd[2];
@@ -339,19 +339,27 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMes
 	}
 }
 
-void Location::answer_request(HTTPMessage &http_request, int connfd)
+int Location::answer_request(HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
 	std::string full_path = this->get_full_path(http_request, isindexadded);
 	std::cout << "full_path : " << full_path << std::endl;
 	std::string body;
 	HTTPMessage http_response;
+	bool is_allowed_method = false;
+	try {
+		if (_allowed_methods.at(http_request.getMethod()) == true)
+			is_allowed_method = true;
+	} catch (...) {
+
+	}
+
 	if (http_request.getBody().length() > _client_max_body_size)
 	{
 		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
 			http_response.setBody("<h1>413 Request Entity Too Large</h1>");
 	}
-	else if (_allowed_methods.at(http_request.getMethod()) == false)
+	else if (is_allowed_method == false)
 	{
 		if (setResponseErrorBody(http_response, "405 Method Not Allowed", "405", _error_pages) == -1)
 			http_response.setBody("<h1>405 Method Not Allowed.</h1>");
@@ -415,6 +423,19 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 				file.close();
 			}
 		}
+		std::ifstream file(full_path.c_str());
+		if (file && file.is_open() && !is_directory(full_path))
+		{
+			if (full_path.find("index.php") != std::string::npos)
+				handleCGI(http_response, get_full_path(http_request, isindexadded), http_request);
+			else
+			{
+				std::stringstream body_buffer;
+				body_buffer << file.rdbuf();
+				body = body_buffer.str();
+				http_response.setBody(body);
+			}
+		}
 	}
 	else if (http_request.getMethod() == "DELETE")
 	{
@@ -433,9 +454,7 @@ void Location::answer_request(HTTPMessage &http_request, int connfd)
 	http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
 
 	ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-	if (size_send == -1)
-		throw std::runtime_error("send issue");
-	//close(connfd);
+	return (size_send);
 }
 
 std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)

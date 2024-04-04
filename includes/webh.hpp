@@ -8,10 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
-
-#include "VirtualServer.hpp"
-#include "Socket.hpp"
-#include "WebServ.hpp"
+#include <netinet/in.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>

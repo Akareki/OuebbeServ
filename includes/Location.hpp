@@ -59,7 +59,7 @@ public:
 	};
 	const static std::string optNames[OPTNB];
 	static void (Location::*optSetters[OPTNB])(const std::string &);
-	void answer_request(HTTPMessage &http_request, int connfd);
+	int answer_request(HTTPMessage &http_request, int connfd);
 	std::string			get_full_path(const HTTPMessage &http_request, bool &isindexadded);
 	void display() const;
 private:
@@ -67,9 +67,12 @@ private:
 	std::string _index;
 	std::string _redirect;
 	bool _autoindex;
-	unsigned int  _client_max_body_size;
+	unsigned int _client_max_body_size;
 	std::map<std::string, std::string> _error_pages;
 	std::map<std::string, bool> _allowed_methods;
+	std::map<std::string, std::string> _cgi;
+	std::vector<std::string> _set_cookie;
+	std::map<std::string, std::string> _cookie;
 };
 
 #endif

@@ -1,8 +1,24 @@
-//
-// Created by wlalaoui on 3/15/24.
-//
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Socket.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
+/*   Updated: 2024/04/04 09:52:30 by aoizel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "../includes/Socket.hpp"
+#include "../includes/Client.hpp"
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <map>
+#include <netinet/in.h>
+#include <ostream>
+#include <unistd.h>
 
 int	initialize(const std::string &host, int port)
 {
@@ -37,7 +53,7 @@ int	initialize(const std::string &host, int port)
 	return sockfd;
 }
 
-Socket::Socket(const std::string &host, const std::string &port): _host(host), _port(port)
+Socket::Socket(const std::string &host, const std::string &port): _running(false), _epollfd(-1), _sockfd(-1), _host(host), _port(port)
 {
 	_sockfd = initialize(host, atoi(port.c_str()));
 	if (_sockfd == -1)
@@ -45,7 +61,6 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 	_epollfd = epoll_create1(0);
 	if (_epollfd == -1)
 		throw std::runtime_error("epoll create issue");
-
 	_event.events = EPOLLIN;
 	_event.data.fd = _sockfd;
 	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
@@ -57,6 +72,13 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 
 Socket::~Socket()
 {
+	if (_running)
+	{
+		if (_sockfd > 0)
+			close(_sockfd);
+		if (_epollfd > 0)
+			close(_epollfd);
+	}
 }
 
 Socket::Socket(const Socket &other)
@@ -66,12 +88,14 @@ Socket::Socket(const Socket &other)
 
 Socket &Socket::operator=(const Socket &other)
 {
+	_running = other._running;
 	_host = other._host;
 	_port = other._port;
 	_sockfd = other._sockfd;
 	_servers = other._servers;
 	_epollfd = other._epollfd;
 	_event = other._event;
+	_clients = other._clients;
 	for (int i = 0; i < 10; i++)
 		_events[i] = other._events[i];
 
@@ -91,6 +115,11 @@ const std::string &Socket::getPort() const
 void Socket::addServer(VirtualServer vserv)
 {
 	_servers.push_back(vserv);
+}
+
+void Socket::setRunning()
+{
+	_running = true;
 }
 
 void Socket::display()
@@ -122,7 +151,7 @@ int	accept_connection(int sockfd)
 	return connfd;
 }
 
-void	Socket::answer_request(const std::string &request, int connfd)
+void	Socket::answer_request(const HTTPMessage &request, int connfd)
 {
 	HTTPMessage http_request(request);
 
@@ -133,28 +162,24 @@ void	Socket::answer_request(const std::string &request, int connfd)
 		http_response.setBody("<h1>400 Bad Request</h1>");
 		http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
 		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
-		if (size_send == -1)
-			throw std::runtime_error("send issue");
+		if (size_send <= 0)
+			_clients.erase(connfd);
 		return ;
 	}
-	bool answered = false;
 	std::string server_name;
 	try {
 		server_name = http_request.getHeaders().at("Host")[0];
 	} catch (...) {
 
 	}
-	for (std::vector<VirtualServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	std::vector<VirtualServer>::iterator it;
+	for (it = _servers.end(); it != _servers.begin(); --it)
 	{
 		if (server_name == it->getServerName())
-		{
-			it->answer_request(http_request, connfd);
-			answered = true;
 			break;
-		}
 	}
-	if (!answered || server_name.empty())
-		_servers[0].answer_request(http_request, connfd);
+	if (it->answer_request(http_request, connfd) <= 0)
+		_clients.erase(connfd);
 }
 
 void Socket::http_listen()
@@ -183,20 +208,29 @@ void Socket::http_listen()
 				std::cerr << "epoll ctl failed" << std::endl;
 				throw std::runtime_error("epoll ctl issue");
 			}
-			_clients[connfd] = Client(connfd);
+			_clients[connfd].setFd(connfd);
 		}
 		else
 		{
 			if (_events[n].events & EPOLLIN)
 			{
-				_clients.at(_events[n].data.fd).readRequest();
+				if (_clients.at(_events[n].data.fd).readRequest() == -1)
+				{
+					_clients.erase(_events[n].data.fd);
+				}
 			}
 			else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
 			{
-				std::string request = _clients.at(_events[n].data.fd).getRequest();
-				if (!request.empty())
-					this->answer_request(request, _events[n].data.fd);
+				HTTPMessage request = _clients.at(_events[n].data.fd).getRequest();
+				this->answer_request(request, _events[n].data.fd);
 			}
 		}
+	}
+	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end();)
+	{
+		if (it->second.isTimedOut())
+			_clients.erase(it++);
+		else
+			++it;
 	}
 }
