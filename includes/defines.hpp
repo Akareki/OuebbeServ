@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 10:12:23 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 10:14:22 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 08:38:05 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #include <vector>
 #define WS " \t\r\n"
 #define CRLF "\r\n"
-#define OPTNB 10
+#define OPTNB 15
 #define DEBUG_MODE 1
 
 extern unsigned int line_nb;

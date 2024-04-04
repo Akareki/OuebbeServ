@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/03 08:59:19 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 08:44:06 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,13 @@
 
 const std::string Location::optNames[OPTNB]
 	= {"root", "index", "autoindex", "return", "client_max_body_size",
-		"error_page", "allow"};
+		"error_page", "allow", "cgi"};
 
 void (Location::*Location::optSetters[OPTNB])(const std::string &) =
 	{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
 		&Location::setRedirect, &Location::setClientMaxBodySize,
-		&Location::setErrorPage, &Location::setAllowedMethods};
+		&Location::setErrorPage, &Location::setAllowedMethods,
+		&Location::setCGI};
 
 Location::Location()
 {
@@ -154,6 +155,13 @@ void Location::setAllowedMethods(const std::string &opt_value)
 		else
 	  		throw LocationException("wrong method in allow");
 	}
+}
+
+void Location::setCGI(const std::string &opt_value)
+{
+	if (opt_value.find(" ") == std::string::npos)
+		throw LocationException("wrong value for cgi");
+	_cgi[opt_value.substr(0, opt_value.find(" "))] = opt_value.substr(opt_value.find(" ") + 1, std::string::npos);
 }
 
 void Location::setOpt(const std::string &opt_name, const std::string &opt_value)

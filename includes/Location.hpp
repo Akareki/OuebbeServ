@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:58:37 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 08:43:21 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <vector>
-#define OPTNB 10
 
 class VirtualServer;
 class HTTPMessage;
@@ -49,6 +48,7 @@ class Location
 		void setClientMaxBodySize(const std::string &);
 		void setErrorPage(const std::string &);
 		void setAllowedMethods(const std::string &);
+		void setCGI(const std::string &);
 		int answer_request(HTTPMessage &, int);
 		std::string get_full_path(const HTTPMessage &, bool &);
 		class LocationException: public std::exception
@@ -72,6 +72,7 @@ class Location
 		unsigned int _client_max_body_size;
 		std::map<std::string, std::string> _error_pages;
 		std::map<std::string, bool> _allowed_methods;
+		std::map<std::string, std::string> _cgi;
 };
 
 #endif
