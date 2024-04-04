@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:46:33 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 09:25:37 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class Socket {
 		const std::string &getPort() const;
 		Socket &operator=(const Socket&);
 		void addServer(VirtualServer);
+		void setRunning();
 		class SocketException: public std::exception
 		{
 			virtual const char *what() const throw();
@@ -46,6 +47,7 @@ class Socket {
 		void	parse_request(const std::string &request);
 		void	answer_request(const HTTPMessage &request, int connfd);
 	private:
+		bool _running;
 		std::map<int, Client> _clients;
 		Socket();
 		int 	_epollfd;

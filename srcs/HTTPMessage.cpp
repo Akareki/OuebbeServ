@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:47:36 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 09:54:13 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ void	fill_map(const std::string &request, std::map<std::string, std::vector<std:
 	}
 }
 
-HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK")
+HTTPMessage::HTTPMessage() : _http_version("HTTP/1.1"), _status("200 OK"), _is_bad_request(false)
 {
 	this->addHeader("server", "webserv");
 }
@@ -139,8 +139,10 @@ HTTPMessage &HTTPMessage::operator=(const HTTPMessage &other)
 	_method = other._method;
 	_path = other._path;
 	_status = other._status;
+	_file_header = other._file_header;
 	_headers = other._headers;
 	_body = other._body;
+	_is_bad_request = other._is_bad_request;
 	return (*this);
 }
 

@@ -6,13 +6,16 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/03 08:54:52 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 09:34:00 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/WebServ.hpp"
+#include <cstring>
+#include <stdexcept>
 
 unsigned int line_nb = 1;
+int sig = 0;
 
 WebServ::WebServ()
 {
@@ -100,14 +103,27 @@ WebServ::WebServException::~WebServException() throw()
 {
 }
 
+void webservSigHandler(int sig_code)
+{
+	sig = sig_code;
+}
 
 void WebServ::start()
 {
-	while (true)
+	struct sigaction	action;
+
+	memset(&action, 0, sizeof(action));
+	action.sa_handler = webservSigHandler;
+	action.sa_flags = SA_SIGINFO;
+	if (sigaction(SIGINT, &action, NULL))
+		throw std::runtime_error("Sigaction fail");
+	while (sig == 0)
 	{
 		for (std::vector<Socket>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
 		{
+			it->setRunning();
 			it->http_listen();
 		}
 	}
+	std::cout << "Closing WebServ." << std::endl;
 }

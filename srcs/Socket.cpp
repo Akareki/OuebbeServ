@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/03 09:16:51 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/04 09:52:30 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ int	initialize(const std::string &host, int port)
 	return sockfd;
 }
 
-Socket::Socket(const std::string &host, const std::string &port): _host(host), _port(port)
+Socket::Socket(const std::string &host, const std::string &port): _running(false), _epollfd(-1), _sockfd(-1), _host(host), _port(port)
 {
 	_sockfd = initialize(host, atoi(port.c_str()));
 	if (_sockfd == -1)
@@ -72,6 +72,13 @@ Socket::Socket(const std::string &host, const std::string &port): _host(host), _
 
 Socket::~Socket()
 {
+	if (_running)
+	{
+		if (_sockfd > 0)
+			close(_sockfd);
+		if (_epollfd > 0)
+			close(_epollfd);
+	}
 }
 
 Socket::Socket(const Socket &other)
@@ -81,6 +88,7 @@ Socket::Socket(const Socket &other)
 
 Socket &Socket::operator=(const Socket &other)
 {
+	_running = other._running;
 	_host = other._host;
 	_port = other._port;
 	_sockfd = other._sockfd;
@@ -107,6 +115,11 @@ const std::string &Socket::getPort() const
 void Socket::addServer(VirtualServer vserv)
 {
 	_servers.push_back(vserv);
+}
+
+void Socket::setRunning()
+{
+	_running = true;
 }
 
 void Socket::display()
