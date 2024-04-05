@@ -87,15 +87,15 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 	_method = first_line[0];
 
 	size_t index_interr = first_line[1].find('?');
-	std::cout << "first line 1 " << first_line[1] << std::endl;
+	//std::cout << "first line 1 " << first_line[1] << std::endl;
 	if (index_interr == std::string::npos)
 		_path = first_line[1];
 	else
 		_path = first_line[1].substr(0, index_interr);
-	std::cout << "path " << _path << std::endl;
+	//std::cout << "path " << _path << std::endl;
 	if (index_interr != std::string::npos)
 		_url_params = first_line[1].substr(index_interr + 1);
-	std::cout << "url params" << _url_params << std::endl;
+	//std::cout << "url params" << _url_params << std::endl;
 	//parse headers
 	fill_map(request, _headers);
 

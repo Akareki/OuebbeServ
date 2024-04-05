@@ -402,7 +402,7 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 		temp_index = _index;
 	}
 	std::string full_path = this->get_full_path(http_request, isindexadded, temp_index);
-	std::cout << "full_path : " << full_path << std::endl;
+	//std::cout << "full_path : " << full_path << std::endl;
 	std::string body;
 	HTTPMessage http_response;
 	bool is_allowed_method = false;

@@ -221,7 +221,7 @@ void Socket::http_listen()
 			}
 			else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
 			{
-				HTTPMessage request = _clients.at(_events[n].data.fd).getRequest();
+				const HTTPMessage &request = _clients.at(_events[n].data.fd).getRequest();
 				this->answer_request(request, _events[n].data.fd);
 			}
 		}
