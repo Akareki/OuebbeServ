@@ -6,7 +6,7 @@
 #    By: aoizel <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/02/06 14:50:12 by aoizel            #+#    #+#              #
-#    Updated: 2024/04/04 13:16:59 by aoizel           ###   ########.fr        #
+#    Updated: 2024/04/04 13:50:16 by aoizel           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,8 +32,6 @@ OBJECTS			=	$(addprefix $(OBJECTS_DIR),$(RAW_SOURCES:.cpp=.o))
 DEPENDENCIES	=	Makefile
 
 DEPS			=	$(OBJECTS:.o=.d)
-
-DEPFLAGS		=	-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
 CPP				=	$(CXX) $(CPP_FLAGS)
 
