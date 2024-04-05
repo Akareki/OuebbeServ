@@ -183,9 +183,21 @@ std::string HTTPMessage::getMessage() const
 		msg += it->first + ": ";
 		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
-			msg += *vit;
-			if (vit != it->second.end() - 1)
-				msg += "; ";
+			if (it->first == "Set-Cookie")
+			{
+				msg += *vit;
+				if (vit != it->second.end() - 1)
+				{
+					msg += CRLF;
+					msg += "Set-Cookie:";
+				}
+			}
+			else
+			{
+				msg += *vit;
+				if (vit != it->second.end() - 1)
+					msg += "; ";
+			}
 		}
 		msg += CRLF;
 	}

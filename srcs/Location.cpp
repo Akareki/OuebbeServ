@@ -273,7 +273,7 @@ void Location::display() const
 	std::cout << std::endl;
 }
 
-std::string directory_listing(const std::string &directory)
+std::string directory_listing(const std::string &directory, const std::string &directory_w_root)
 {
 	std::string html_body = "<html><body><ul>";
 	DIR *dir = opendir(directory.c_str());
@@ -287,8 +287,7 @@ std::string directory_listing(const std::string &directory)
 	s_read = readdir(dir);
 	while (s_read != NULL)
 	{
-		std::cout << "sread name : " << s_read->d_name << std::endl;
-		html_body += "<a href=\"/";
+		html_body += "<a href=\"" + directory_w_root;
 		html_body += s_read->d_name;
 		html_body += "\">";
 		html_body += "<li>";
@@ -384,12 +383,13 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 	bool isindexadded = false;
 	std::string temp_index;
 	bool iscookieadded = false;
+	DIR *dir;
 	try {
 		for (std::vector<std::string>::const_iterator it = http_request.getHeaders().at("Cookie").begin(); it != http_request.getHeaders().at("Cookie").end(); it++)
 		{
-			if (*it == "visited")
+			if (*it == "visited=true" && !_cookie["visited=true"].empty())
 			{
-				temp_index = _cookie["visited"];
+				temp_index = _cookie["visited=true"];
 				iscookieadded = true;
 				break ;
 			}
@@ -410,7 +410,6 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 		if (_allowed_methods.at(http_request.getMethod()) == true)
 			is_allowed_method = true;
 	} catch (...) {
-
 	}
 	for (std::vector<std::string>::iterator it = _set_cookie.begin(); it != _set_cookie.end(); it++)
 	{
@@ -452,9 +451,10 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 				}
 			}
 		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
+		else if (_autoindex && isindexadded == true && (dir = opendir(full_path.substr(0, full_path.find_last_of("/")).c_str())) && dir != NULL)
 		{
-			body = directory_listing(_root);
+			closedir(dir);
+			body = directory_listing(full_path.substr(0, full_path.find_last_of("/")), http_request.getPath());
 			http_response.setBody(body);
 		}
 		else
