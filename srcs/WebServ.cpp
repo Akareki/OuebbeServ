@@ -6,13 +6,14 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 10:05:15 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:16:50 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/WebServ.hpp"
 #include <cstring>
 #include <stdexcept>
+#include <unistd.h>
 
 unsigned int line_nb = 1;
 int sig = 0;
@@ -80,6 +81,7 @@ WebServ::WebServ(const std::string &config_file) : _epollfd(-1)
 			throw std::runtime_error("epoll ctl issue");
 		}
 		_socket_map[it->getSockFd()] = &(*it);
+		it->setRunning();
 	}
 }
 
@@ -115,7 +117,7 @@ void WebServ::http_listen()
 	while (1)
 	{
 		int fd_amount = epoll_wait(_epollfd, _events, 10, -1);
-		if (sig != 0)
+		if (sig == SIGINT)
 			break;
 		if (fd_amount == -1)
 		{
@@ -168,6 +170,8 @@ void WebServ::http_listen()
 
 WebServ::~WebServ()
 {
+	if (_epollfd != -1)
+		close(_epollfd);
 }
 
 WebServ::WebServ(const WebServ &other)
