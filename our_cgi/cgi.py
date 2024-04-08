@@ -7,6 +7,5 @@ def main():
             data = file.read().replace('a', 'b')
 
         print("Content-type: text/html; charset=UTF-8\r\n\r\n" + data)
-
 if __name__=="__main__":
     main()

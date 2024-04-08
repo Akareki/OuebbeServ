@@ -6,12 +6,13 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 10:04:29 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 11:11:00 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Socket.hpp"
 #include "../includes/Client.hpp"
+#include <asm-generic/socket.h>
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>

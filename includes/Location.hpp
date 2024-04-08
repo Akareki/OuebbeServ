@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 09:39:35 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 11:39:18 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <vector>
+#define CGI_TIMEOUT 100
 
 class VirtualServer;
 class HTTPMessage;

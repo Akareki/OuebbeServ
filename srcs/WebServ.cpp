@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 10:21:59 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 12:03:18 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include <csignal>
 #include <cstring>
 #include <stdexcept>
+#include <sys/epoll.h>
 #include <unistd.h>
 
 unsigned int line_nb = 1;
@@ -147,8 +148,10 @@ void WebServ::http_listen()
 				if (_events[n].events & EPOLLIN)
 				{
 					int return_value = _clients.at(_events[n].data.fd).readRequest();
+					(void) return_value;
 					if (return_value == -1 || return_value == 0)
 					{
+						epoll_ctl(_epollfd, EPOLL_CTL_DEL, _events[n].data.fd, 0);
 						_clients.erase(_events[n].data.fd);
 					}
 				}

@@ -6,20 +6,29 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 10:07:15 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 11:46:10 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Location.hpp"
 #include "../includes/VirtualServer.hpp"
+#include <bits/types/struct_timeval.h>
+#include <bits/types/struct_tm.h>
+#include <bits/types/time_t.h>
+#include <csignal>
 #include <cstdlib>
+#include <ctime>
 #include <dirent.h>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <vector>
+#include <sys/time.h>
 
 const std::string Location::optNames[OPTNB]
 		= {"root", "index", "autoindex", "return", "client_max_body_size",
@@ -365,12 +374,37 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, const H
 	{
 		close(pipefd[1]);
 		ssize_t len_read;
+		struct timeval tmstart;
+		gettimeofday(&tmstart, 0);
+		struct timeval tmend;
+		while (waitpid(pid, NULL, WUNTRACED | WNOHANG) != pid)
+		{
+			gettimeofday(&tmend, 0);
+			if ((tmend.tv_sec - tmstart.tv_sec) * 1000 + (tmend.tv_usec - tmstart.tv_usec) / 1000 > CGI_TIMEOUT)
+			{
+				close(pipefd[0]);
+				kill(pid, SIGINT);
+				http_response.setStatus("504 Gateway Timeout");
+				http_response.addHeader("Content-Type", "text/html");
+				http_response.addHeader("Content-Type", "charset=UTF-8");
+				http_response.setBody("<h1>CGI Timeout</h1>");
+				return;
+			}
+		}
 		len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
+		close(pipefd[0]);
 		if (len_read == -1)
 			throw std::runtime_error("read issue in location.cpp");
+		if (len_read == 0)
+		{
+			kill(pid, SIGINT);
+			http_response.setStatus("502 Bad Gateway");
+			http_response.addHeader("Content-Type", "text/html");
+			http_response.addHeader("Content-Type", "charset=UTF-8");
+			http_response.setBody("<h1>CGI Failed</h1>");
+			return;
+		}
 		buffer[len_read] = '\0';
-		close(pipefd[0]);
-		waitpid(pid, NULL, 0);
 		std::string body = split(buffer, "\r\n")[2];
 		http_response.addHeader("Content-Type", "text/html");
 		http_response.addHeader("Content-Type", "charset=UTF-8");
