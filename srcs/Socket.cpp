@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:02 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 11:11:00 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 13:51:03 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,7 +122,7 @@ void	Socket::answer_request(const HTTPMessage &http_request, int connfd)
 	if (http_request.isBadRequest() == true)
 	{
 		HTTPMessage http_response;
-		http_response.setStatus("400");
+		http_response.setStatus("400 Bad Request");
 		http_response.setBody("<h1>400 Bad Request</h1>");
 		http_response.addHeader("Content-Length", cpp_itoa(http_response.getBody().length()));
 		ssize_t size_send = send(connfd, http_response.getMessage().c_str(), http_response.getMessage().length(), MSG_CONFIRM);
