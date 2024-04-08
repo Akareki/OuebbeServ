@@ -11,11 +11,6 @@
 /* ************************************************************************** */
 
 #include "../includes/VirtualServer.hpp"
-#include <dirent.h>
-#include <map>
-#include <string>
-#include <sys/socket.h>
-#include <unistd.h>
 
 const std::string VirtualServer::optNames[OPTNB]
 		= {"host", "listen", "server_name", "root",

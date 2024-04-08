@@ -15,9 +15,6 @@
 #include <iostream>
 #include <sstream>
 #define CRLF "\r\n"
-#include <map>
-#include <algorithm>
-#include <vector>
 
 void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > &headers)
 {

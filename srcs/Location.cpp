@@ -13,21 +13,11 @@
 #include "../includes/Location.hpp"
 #include "../includes/VirtualServer.hpp"
 #include <bits/types/struct_timeval.h>
-#include <bits/types/struct_tm.h>
-#include <bits/types/time_t.h>
-#include <csignal>
 #include <cstdlib>
-#include <ctime>
 #include <dirent.h>
-#include <iomanip>
-#include <iostream>
-#include <ostream>
-#include <sstream>
-#include <string>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <vector>
 #include <sys/time.h>
 
 const std::string Location::optNames[OPTNB]

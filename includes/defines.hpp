@@ -17,7 +17,6 @@
 #define WS " \t\r\n"
 #define CRLF "\r\n"
 #define OPTNB 15
-#define DEBUG_MODE 1
 
 extern unsigned int line_nb;
 

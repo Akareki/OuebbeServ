@@ -10,7 +10,6 @@ int main(int argc, char **argv)
 	try
 	{
 		WebServ ws(argv[1]);
-		//ws.display();
 		ws.start();
 	}
 	catch (std::exception &ex)

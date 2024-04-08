@@ -11,14 +11,9 @@
 /* ************************************************************************** */
 
 #include "../includes/Socket.hpp"
-#include "../includes/Client.hpp"
 #include <asm-generic/socket.h>
 #include <cstring>
-#include <fcntl.h>
-#include <iostream>
-#include <map>
 #include <netinet/in.h>
-#include <ostream>
 #include <unistd.h>
 
 int	initialize(const std::string &host, int port)

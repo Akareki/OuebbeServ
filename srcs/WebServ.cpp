@@ -13,7 +13,6 @@
 #include "../includes/WebServ.hpp"
 #include <csignal>
 #include <cstring>
-#include <stdexcept>
 #include <sys/epoll.h>
 #include <unistd.h>
 

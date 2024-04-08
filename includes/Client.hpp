@@ -14,7 +14,7 @@
 # define CLIENT_HPP
 #define CLIENT_TIMEOUT 5
 
-#include <time.h>
+#include <ctime>
 #include "HTTPMessage.hpp"
 #include <string>
 
