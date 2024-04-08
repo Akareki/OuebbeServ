@@ -6,17 +6,18 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 09:19:26 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 12:35:28 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 13:17:52 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Client.hpp"
 #include <ctime>
 #include <fcntl.h>
+#include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
 
-Client::Client(): _ready(false), _connfd(-1), _last_activity(time(0))
+Client::Client(): _connfd(-1), _last_activity(time(0))
 {
 }
 
@@ -36,7 +37,6 @@ Client &Client::operator=(const Client &other)
 	if (this == &other)
 		return (*this);
 	_connfd = other._connfd;
-	_ready = other._ready;
 	_last_activity = other._last_activity;
 	return(*this);
 }
@@ -56,16 +56,6 @@ const HTTPMessage &Client::getRequest() const
 	return (_request);
 }
 
-bool Client::isReady()
-{
-	if (_ready)
-	{
-		_ready = false;
-		return (true);
-	}
-	return (_ready);
-}
-
 bool Client::isTimedOut() const
 {
 	return (time(0) - _last_activity >= CLIENT_TIMEOUT);
@@ -79,7 +69,7 @@ int Client::readRequest()
 	if (len_read <= 0)
 		return (len_read);
 	buffer[len_read] = '\0';
+	std::cout << buffer << std::endl;
 	_request = HTTPMessage(buffer);
-	_ready = true;
 	return (-2);
 }

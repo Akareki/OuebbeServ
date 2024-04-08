@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 08:42:16 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 09:26:16 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 13:17:28 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,11 +29,9 @@ class Client
 		void setFd(int fd);
 		int getFd() const;
 		const HTTPMessage &getRequest() const;
-		bool isReady();
 		bool isTimedOut() const;
 		int readRequest();
 	private:
-		bool _ready;
 		int _connfd;
 		HTTPMessage _request;
 		time_t _last_activity;
