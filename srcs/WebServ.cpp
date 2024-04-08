@@ -6,11 +6,12 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 10:16:50 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:21:59 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/WebServ.hpp"
+#include <csignal>
 #include <cstring>
 #include <stdexcept>
 #include <unistd.h>
@@ -220,6 +221,7 @@ void WebServ::start()
 	action.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGINT, &action, NULL))
 		throw std::runtime_error("Sigaction fail");
+	signal(SIGPIPE, SIG_IGN);
 	this->http_listen();
 	std::cout << std::endl << "Closing WebServ." << std::endl;
 }
