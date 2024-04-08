@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 11:46:10 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 13:43:47 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -333,7 +333,7 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
-void handleCGI(HTTPMessage &http_response, const std::string &full_path, const HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
+void Location::handleCGI(HTTPMessage &http_response, const std::string &full_path, const HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
 {
 	char buffer[2000];
 	char *list_buffer[100] = {const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
@@ -374,10 +374,10 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, const H
 			{
 				close(pipefd[0]);
 				kill(pid, SIGINT);
-				http_response.setStatus("504 Gateway Timeout");
+				if (setResponseErrorBody(http_response, "504 Gateway Timeout", "504", _error_pages) == -1)
+					http_response.setBody("<h1>CGI Timeout</h1>");
 				http_response.addHeader("Content-Type", "text/html");
 				http_response.addHeader("Content-Type", "charset=UTF-8");
-				http_response.setBody("<h1>CGI Timeout</h1>");
 				return;
 			}
 		}
@@ -388,10 +388,10 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, const H
 		if (len_read == 0)
 		{
 			kill(pid, SIGINT);
-			http_response.setStatus("502 Bad Gateway");
+			if (setResponseErrorBody(http_response, "502 Bad Gateway", "502", _error_pages) == -1)
+				http_response.setBody("<h1>CGI Failed</h1>");
 			http_response.addHeader("Content-Type", "text/html");
 			http_response.addHeader("Content-Type", "charset=UTF-8");
-			http_response.setBody("<h1>CGI Failed</h1>");
 			return;
 		}
 		buffer[len_read] = '\0';
