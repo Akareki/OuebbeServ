@@ -57,7 +57,7 @@ public:
 	static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 	void display() const;
 	std::string	get_full_path(const HTTPMessage &http_request);
-	int answer_request(HTTPMessage &http_request, int connfd);
+	int answer_request(const HTTPMessage &http_request, int connfd);
 	std::string get_full_path(const HTTPMessage &, bool &);
 private:
 	std::string _host;

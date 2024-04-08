@@ -17,6 +17,7 @@ public:
 	~WebServ();
 	void	start();
 	void display();
+	void	http_listen();
 	class WebServException: public std::exception
 	{
 	public:
@@ -32,6 +33,12 @@ private:
 	WebServ(const WebServ&);
 	std::vector<Socket> _sockets;
 	bool _running;
+	std::map<int, Client> _clients;
+	int _epollfd;
+	struct epoll_event _event;
+	struct epoll_event _events[10];
+	std::map<int, Socket*> _socket_map;
+	std::map<int, Socket*> _socket_connfd_map;
 };
 
 

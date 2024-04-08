@@ -21,7 +21,7 @@ SOURCES			=	$(addprefix $(SOURCES_DIR), $(RAW_SOURCES))
 
 INCLUDES_DIR	=	includes/
 
-CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98
+CPP_FLAGS		=	-Wall -Wextra -Werror -std=c++98 -O3
 
 CPP				=	$(CXX) $(CPP_FLAGS)
 

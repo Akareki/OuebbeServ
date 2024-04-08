@@ -324,7 +324,7 @@ int location_length(const std::string &location)
 	return (count);
 }
 
-int	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
+int	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 {
 	int longest_length = 0;
 	std::string longest_location = "/";

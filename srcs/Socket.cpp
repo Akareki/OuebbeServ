@@ -53,21 +53,11 @@ int	initialize(const std::string &host, int port)
 	return sockfd;
 }
 
-Socket::Socket(const std::string &host, const std::string &port): _running(false), _epollfd(-1), _sockfd(-1), _host(host), _port(port)
+Socket::Socket(const std::string &host, const std::string &port): _running(false), _sockfd(-1), _host(host), _port(port)
 {
 	_sockfd = initialize(host, atoi(port.c_str()));
 	if (_sockfd == -1)
 		throw std::runtime_error("sockfd issue");
-	_epollfd = epoll_create1(0);
-	if (_epollfd == -1)
-		throw std::runtime_error("epoll create issue");
-	_event.events = EPOLLIN;
-	_event.data.fd = _sockfd;
-	if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, _sockfd, &_event))
-	{
-		close(_epollfd);
-		throw std::runtime_error("epoll ctl issue");
-	}
 }
 
 Socket::~Socket()
@@ -76,8 +66,6 @@ Socket::~Socket()
 	{
 		if (_sockfd > 0)
 			close(_sockfd);
-		if (_epollfd > 0)
-			close(_epollfd);
 	}
 }
 
@@ -93,13 +81,13 @@ Socket &Socket::operator=(const Socket &other)
 	_port = other._port;
 	_sockfd = other._sockfd;
 	_servers = other._servers;
-	_epollfd = other._epollfd;
-	_event = other._event;
 	_clients = other._clients;
-	for (int i = 0; i < 10; i++)
-		_events[i] = other._events[i];
-
 	return (*this);
+}
+
+const int &Socket::getSockFd() const
+{
+	return _sockfd;
 }
 
 const std::string &Socket::getHost() const
@@ -135,26 +123,9 @@ void Socket::display()
 	}
 }
 
-int	accept_connection(int sockfd)
+void	Socket::answer_request(const HTTPMessage &http_request, int connfd)
 {
-	int connfd;
-
-	struct sockaddr_in client_addr;
-	socklen_t client_len = sizeof(sockaddr_in);
-
-	connfd = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
-	if (connfd < 0)
-	{
-		std::cout << "error happened " << std::endl;
-		return -1;
-	}
-	return connfd;
-}
-
-void	Socket::answer_request(const HTTPMessage &request, int connfd)
-{
-	HTTPMessage http_request(request);
-
+	//std::cout << http_request.getMessage() << std::endl;
 	if (http_request.isBadRequest() == true)
 	{
 		HTTPMessage http_response;
@@ -169,68 +140,19 @@ void	Socket::answer_request(const HTTPMessage &request, int connfd)
 	std::string server_name;
 	try {
 		server_name = http_request.getHeaders().at("Host")[0];
+		std::cout << "here is the server name : " << server_name << std::endl;
 	} catch (...) {
-
+		std::cerr << "there was an error retrieving server name" << std::endl;
 	}
 	std::vector<VirtualServer>::iterator it;
-	for (it = _servers.end(); it != _servers.begin(); --it)
+	for (it = _servers.end(); it != _servers.begin(); )
 	{
+		--it;
 		if (server_name == it->getServerName())
+		{
 			break;
+		}
 	}
 	if (it->answer_request(http_request, connfd) <= 0)
 		_clients.erase(connfd);
-}
-
-void Socket::http_listen()
-{
-	int connfd;
-	int fd_amount = epoll_wait(_epollfd, _events, 10, 0);
-	if (fd_amount == -1)
-	{
-		std::cerr << "epoll_wait failed" << std::endl;
-		throw std::runtime_error("epoll wait issue");
-	}
-	for (int n = 0; n < fd_amount; n++)
-	{
-		if (_events[n].data.fd == _sockfd)
-		{
-			connfd = accept_connection(_sockfd);
-			if (connfd == -1)
-			{
-				std::cerr << "accept connection failed" << std::endl;
-				throw std::runtime_error("accept issue");
-			}
-			_event.events = EPOLLIN | EPOLLOUT;
-			_event.data.fd = connfd;
-			if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
-			{
-				std::cerr << "epoll ctl failed" << std::endl;
-				throw std::runtime_error("epoll ctl issue");
-			}
-			_clients[connfd].setFd(connfd);
-		}
-		else
-		{
-			if (_events[n].events & EPOLLIN)
-			{
-				if (_clients.at(_events[n].data.fd).readRequest() == -1)
-				{
-					_clients.erase(_events[n].data.fd);
-				}
-			}
-			else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
-			{
-				const HTTPMessage &request = _clients.at(_events[n].data.fd).getRequest();
-				this->answer_request(request, _events[n].data.fd);
-			}
-		}
-	}
-	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end();)
-	{
-		if (it->second.isTimedOut())
-			_clients.erase(it++);
-		else
-			++it;
-	}
 }

@@ -332,7 +332,7 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
-void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
+void handleCGI(HTTPMessage &http_response, const std::string &full_path, const HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
 {
 	char buffer[2000];
 	char *list_buffer[100] = {const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
@@ -378,7 +378,7 @@ void handleCGI(HTTPMessage &http_response, const std::string &full_path, HTTPMes
 	}
 }
 
-int Location::answer_request(HTTPMessage &http_request, int connfd)
+int Location::answer_request(const HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
 	std::string temp_index;

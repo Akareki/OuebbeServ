@@ -13,7 +13,7 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-#define CLIENT_TIMEOUT 5
+#define CLIENT_TIMEOUT 100
 #include "HTTPMessage.hpp"
 #include <string>
 

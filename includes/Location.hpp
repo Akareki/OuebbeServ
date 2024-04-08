@@ -62,7 +62,7 @@ public:
 	};
 	const static std::string optNames[OPTNB];
 	static void (Location::*optSetters[OPTNB])(const std::string &);
-	int answer_request(HTTPMessage &http_request, int connfd);
+	int answer_request(const HTTPMessage &http_request, int connfd);
 	std::string			get_full_path(const HTTPMessage &http_request, bool &isindexadded, const std::string &index);
 	void display() const;
 private:

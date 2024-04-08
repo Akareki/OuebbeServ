@@ -28,20 +28,17 @@ public:
 		virtual const char *what() const throw();
 	};
 	void display();
-	void	http_listen();
+	const int &getSockFd() const;
 	void	parse_request(const std::string &request);
-	void	answer_request(const HTTPMessage &request, int connfd);
+	void	answer_request(const HTTPMessage &http_request, int connfd);
 private:
 	bool _running;
 	std::map<int, Client> _clients;
 	Socket();
-	int 	_epollfd;
 	int 	_sockfd;
 	std::string _host;
 	std::string _port;
 	std::vector<VirtualServer> _servers;
-	struct epoll_event _event;
-	struct epoll_event _events[10];
 };
 
 #endif //WEBSERV_SOCKET_HPP

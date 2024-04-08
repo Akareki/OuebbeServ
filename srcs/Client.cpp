@@ -62,6 +62,7 @@ const HTTPMessage &Client::getRequest() const
 
 bool Client::isReady()
 {
+	return _ready;
 	if (_ready)
 	{
 		_ready = false;
@@ -80,11 +81,12 @@ int Client::readRequest()
 	_last_activity = time(0);
 	char buffer[10000];
 	ssize_t len_read = recv(_connfd, buffer, sizeof(buffer) - 1, O_NONBLOCK);
+	std::cout << len_read << std::endl;
 	if (len_read <= 0)
 		return (len_read);
 	buffer[len_read] = '\0';
 	//std::cout << "Request: " << buffer << std::endl;
 	_request = HTTPMessage(buffer);
 	_ready = true;
-	return (0);
+	return (-2);
 }
