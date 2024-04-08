@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:00:50 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:56:11 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 09:42:30 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ class VirtualServer {
 		static void (VirtualServer::*optSetters[OPTNB])(const std::string &);
 		void display() const;
 		std::string	get_full_path(const HTTPMessage &http_request);
-		int answer_request(HTTPMessage &http_request, int connfd);
+		int answer_request(const HTTPMessage &http_request, int connfd);
 		std::string get_full_path(const HTTPMessage &, bool &);
 	private:
 		std::string _host;

@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:33:51 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/02 13:56:37 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:04:52 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -262,36 +262,6 @@ void VirtualServer::display() const
 	}
 }
 
-/*std::string directory_listing(const std::string &directory)
-{
-	std::string html_body = "<html><body><ul>";
- 	DIR *dir = opendir(directory.c_str());
-	struct dirent *s_read;
-
-	if (!dir)
-	{
-		std::cerr << "opendir failed" << std::endl;
-		return ("");
-	}
-	s_read = readdir(dir);
-	while (s_read != NULL)
-	{
-		std::cout << "sread name : " << s_read->d_name << std::endl;
-		html_body += "<a href=\"/";
-		html_body += s_read->d_name;
-		html_body += "\">";
-		html_body += "<li>";
-		html_body += s_read->d_name;
-		html_body += "</li>";
-		html_body += "</a>";
-		html_body += "\n";
-		s_read = readdir(dir);
-	}
-	html_body += "</ul></body><html>";
-	closedir(dir);
-	return html_body;
-}*/
-
 bool	does_path_matches(const std::string &request_path, const std::string &location)
 {
 	int i = 0;
@@ -307,7 +277,6 @@ bool	does_path_matches(const std::string &request_path, const std::string &locat
 	return (true);
 }
 
-//gives the length of the location, NOT in number of characters
 int location_length(const std::string &location)
 {
 	int i = 0;
@@ -324,7 +293,7 @@ int location_length(const std::string &location)
 	return (count);
 }
 
-int	VirtualServer::answer_request(HTTPMessage &http_request, int connfd)
+int	VirtualServer::answer_request(const HTTPMessage &http_request, int connfd)
 {
 	int longest_length = 0;
 	std::string longest_location = "/";

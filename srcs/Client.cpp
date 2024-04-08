@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 09:19:26 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/03 09:17:34 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:07:13 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ const HTTPMessage &Client::getRequest() const
 
 bool Client::isReady()
 {
+	return _ready;
 	if (_ready)
 	{
 		_ready = false;
@@ -83,8 +84,7 @@ int Client::readRequest()
 	if (len_read <= 0)
 		return (len_read);
 	buffer[len_read] = '\0';
-	std::cout << "Request: " << buffer << std::endl;
 	_request = HTTPMessage(buffer);
 	_ready = true;
-	return (0);
+	return (-2);
 }

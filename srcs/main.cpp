@@ -1,4 +1,4 @@
-#include "../includes/webh.hpp"
+#include "../includes/WebServ.hpp"
 
 int main(int argc, char **argv)
 {

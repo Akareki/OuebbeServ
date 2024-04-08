@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 11:21:22 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 09:34:00 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:05:15 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,8 @@
 unsigned int line_nb = 1;
 int sig = 0;
 
-WebServ::WebServ()
+WebServ::WebServ() :  _epollfd(-1)
 {
-
 }
 
 static std::vector<Socket>::iterator findSocket(std::vector<Socket>::iterator begin, std::vector<Socket>::iterator end, VirtualServer &vserv)
@@ -33,10 +32,11 @@ static std::vector<Socket>::iterator findSocket(std::vector<Socket>::iterator be
 	return (begin);
 }
 
-WebServ::WebServ(const std::string &config_file)
+WebServ::WebServ(const std::string &config_file) : _epollfd(-1)
 {
 	std::ifstream config;
 	std::string line;
+
 
 	config.open(config_file.c_str());
 	if (!config)
@@ -64,6 +64,105 @@ WebServ::WebServ(const std::string &config_file)
 		}
 		else
 			throw WebServException(std::string("Unexpected token in config file"));
+	}
+
+	_epollfd = epoll_create1(0);
+	if (_epollfd == -1)
+		throw std::runtime_error("epoll create issue");
+	memset(&_event, 0, sizeof(_event));
+	for (std::vector<Socket>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
+	{
+		_event.events = EPOLLIN;
+		_event.data.fd = it->getSockFd();
+		if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, it->getSockFd(), &_event))
+		{
+			close(_epollfd);
+			throw std::runtime_error("epoll ctl issue");
+		}
+		_socket_map[it->getSockFd()] = &(*it);
+	}
+}
+
+int	accept_connection(int sockfd)
+{
+	int connfd;
+
+	struct sockaddr_in client_addr;
+	socklen_t client_len = sizeof(sockaddr_in);
+
+	connfd = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
+	if (connfd < 0)
+	{
+		std::cerr << "accept error happened " << std::endl;
+		return -1;
+	}
+	return connfd;
+}
+
+bool	is_sock_event(const std::vector<Socket> &sockets, int fd)
+{
+	for (std::vector<Socket>::const_iterator it = sockets.begin(); it != sockets.end(); it++)
+	{
+		if (it->getSockFd() == fd)
+			return true;
+	}
+	return false;
+}
+
+void WebServ::http_listen()
+{
+	int connfd;
+	while (1)
+	{
+		int fd_amount = epoll_wait(_epollfd, _events, 10, -1);
+		if (sig != 0)
+			break;
+		if (fd_amount == -1)
+		{
+			throw std::runtime_error("epoll wait issue");
+		}
+		for (int n = 0; n < fd_amount; n++)
+		{
+			if (is_sock_event(_sockets, _events[n].data.fd) == true)
+			{
+				connfd = accept_connection(_events[n].data.fd);
+				if (connfd == -1)
+				{
+					throw std::runtime_error("accept issue");
+				}
+				_event.events = EPOLLIN | EPOLLOUT;
+				_event.data.fd = connfd;
+				if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, connfd, &_event) == -1)
+				{
+					throw std::runtime_error("epoll ctl issue");
+				}
+				_socket_connfd_map[connfd] = _socket_map.at(_events[n].data.fd);
+				_clients[connfd].setFd(connfd);
+			}
+			else
+			{
+				if (_events[n].events & EPOLLIN)
+				{
+					int return_value = _clients.at(_events[n].data.fd).readRequest();
+					if (return_value == -1 || return_value == 0)
+					{
+						_clients.erase(_events[n].data.fd);
+					}
+				}
+				else if ((_events[n].events & EPOLLOUT) && _clients.at(_events[n].data.fd).isReady())
+				{
+					const HTTPMessage &request = _clients.at(_events[n].data.fd).getRequest();
+					_socket_connfd_map.at(_events[n].data.fd)->answer_request(request, _events[n].data.fd);
+				}
+			}
+		}
+		for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end();)
+		{
+			if (it->second.isTimedOut())
+				_clients.erase(it++);
+			else
+				++it;
+		}
 	}
 }
 
@@ -117,13 +216,6 @@ void WebServ::start()
 	action.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGINT, &action, NULL))
 		throw std::runtime_error("Sigaction fail");
-	while (sig == 0)
-	{
-		for (std::vector<Socket>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
-		{
-			it->setRunning();
-			it->http_listen();
-		}
-	}
-	std::cout << "Closing WebServ." << std::endl;
+	this->http_listen();
+	std::cout << std::endl << "Closing WebServ." << std::endl;
 }

@@ -28,6 +28,8 @@
     <h1 id="feur">Salut !</h1>
     <h2>Bienvenue sur cet article hébergé par WebServ</h2>
 
+    <h4>Vous êtes connecté en tant que </h4>
+    <h4 class="inline" id="connectedValue"></h4>
 
     <ul>
         <li>Test </li>
@@ -46,11 +48,16 @@
             <input type="text" id="strcmpInput2" name="strcmpInput2">
             <p class="inline" id="strcmpValue"></p>
         </div>
+        <div>
+            <label for="newnameInput">nouveau nom : </label>
+            <input type="text" id="newnameInput" name="newnameInput">
+            <p class="inline" id="newnameValue"></p>
+        </div>
         <br>
         <button onClick="doComputation()">Mettre à jour le titre</button>
     </ul>
 
-    <img src="panda.webp">
+    <!-- <img src="panda.webp"> -->
     <form method="post" enctype="multipart/form-data">
         <div>
             <label for="file">Choose file to upload</label>

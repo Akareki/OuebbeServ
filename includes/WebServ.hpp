@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:37:37 by aoizel            #+#    #+#             */
-/*   Updated: 2024/03/21 09:05:58 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 09:46:09 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,11 @@
 #include <vector>
 
 class WebServ {
+public:
 	public:
 		WebServ(const std::string &);
 		~WebServ();
+		void	http_listen();
 		void	start();
 		void display();
 		class WebServException: public std::exception
@@ -33,11 +35,18 @@ class WebServ {
 				std::string _msg;
 		};
 	private:
+		std::string _msg;
 		WebServ &operator=(const WebServ&);
 		WebServ();
 		WebServ(const WebServ&);
 		std::vector<Socket> _sockets;
 		bool _running;
+		std::map<int, Client> _clients;
+		int _epollfd;
+		struct epoll_event _event;
+		struct epoll_event _events[10];
+		std::map<int, Socket*> _socket_map;
+		std::map<int, Socket*> _socket_connfd_map;
 };
 
 

@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 10:41:36 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 09:25:37 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 09:46:53 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,9 @@
 #include <cstdlib>
 #include "HTTPMessage.hpp"
 #include "VirtualServer.hpp"
-#include "Client.hpp"
-#include "defines.hpp"
-#include <exception>
-#include <map>
-#include <string>
-#include <sys/epoll.h>
-#include <vector>
+#include "HTTPMessage.hpp"
+
+class VirtualServer;
 
 class Socket {
 	public:
@@ -43,20 +39,17 @@ class Socket {
 			virtual const char *what() const throw();
 		};
 		void display();
-		void	http_listen();
+		const int &getSockFd() const;
 		void	parse_request(const std::string &request);
-		void	answer_request(const HTTPMessage &request, int connfd);
+		void	answer_request(const HTTPMessage &http_request, int connfd);
 	private:
 		bool _running;
 		std::map<int, Client> _clients;
 		Socket();
-		int 	_epollfd;
 		int 	_sockfd;
 		std::string _host;
 		std::string _port;
 		std::vector<VirtualServer> _servers;
-		struct epoll_event _event;
-		struct epoll_event _events[10];
 };
 
-#endif //WEBSERV_TCPLISTENER_HPP
+#endif //WEBSERV_SOCKET_HPP

@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 11:16:44 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 10:05:28 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 09:39:35 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,8 @@ class Location
 		void setCGI(const std::string &);
 		void setSetCookie(const std::string &);
 		void setCookie(const std::string &);
-		int answer_request(HTTPMessage &, int);
-		std::string get_full_path(const HTTPMessage &, bool &);
+		int answer_request(const HTTPMessage &, int);
+		std::string get_full_path(const HTTPMessage &, bool &, const std::string &);
 		class LocationException: public std::exception
 		{
 			public:

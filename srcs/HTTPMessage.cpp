@@ -6,35 +6,34 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/19 13:13:29 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 09:54:13 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:07:15 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/HTTPMessage.hpp"
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #define CRLF "\r\n"
 #include <map>
-#include <string>
+#include <algorithm>
 #include <vector>
 
 void	fill_map(const std::string &request, std::map<std::string, std::vector<std::string> > &headers)
 {
-	std::string line;
-	std::istringstream request_stream(request);
-	std::getline(request_stream, line, '\n');
-	while (std::getline(request_stream, line, '\n'))
+	std::vector<std::string> splited_request = split(request, "\r\n");
+	for (std::vector<std::string>::iterator it = splited_request.begin(); it != splited_request.end(); it++)
 	{
-		if (line.find(':') == std::string::npos)
+		if ((*it).find(':') == std::string::npos)
 			continue ;
-		std::string first_half = line.substr(0, line.find(':'));
-		if (line.find(' ') == std::string::npos || line.find('\r') == std::string::npos)
+		std::string first_half = (*it).substr(0, (*it).find(':'));
+		if ((*it).find(' ') == std::string::npos)
 			continue ;
-		std::string second_half = line.substr(line.find(' ') + 1, line.find('\r') - 6);
+		std::string second_half = (*it).substr((*it).find(' ') + 1);
 		std::vector<std::string> splited_second_half = split(second_half, ';');
-		for (std::vector<std::string>::iterator it = splited_second_half.begin(); it != splited_second_half.end(); it++)
+		for (std::vector<std::string>::iterator ita = splited_second_half.begin(); ita != splited_second_half.end(); ita++)
 		{
-			headers[first_half].push_back(*it);
+			headers[first_half].push_back(*ita);
 		}
 	}
 }
@@ -64,16 +63,21 @@ HTTPMessage::HTTPMessage(const std::string &request) : _is_bad_request(false) //
 		_is_bad_request = true;
 		return ;
 	}
-	//parse first line with path and method
 	std::string line;
 	std::istringstream request_stream(request);
 	std::getline(request_stream, line, '\n');
 	std::vector<std::string> first_line = split(line, ' ');
 
 	_method = first_line[0];
-	_path = first_line[1];
+
+	size_t index_interr = first_line[1].find('?');
+	if (index_interr == std::string::npos)
+		_path = first_line[1];
+	else
+		_path = first_line[1].substr(0, index_interr);
+	if (index_interr != std::string::npos)
+		_url_params = first_line[1].substr(index_interr + 1);
 	fill_map(request, _headers);
-	//parse body (POST requests usually have a body)
 	const std::map<std::string, std::vector<std::string> > &requestMap = _headers;
 	try {
 		const std::vector<std::string> &contentType = requestMap.at("Content-Type");
@@ -139,6 +143,7 @@ HTTPMessage &HTTPMessage::operator=(const HTTPMessage &other)
 	_method = other._method;
 	_path = other._path;
 	_status = other._status;
+	_url_params = other._url_params;
 	_file_header = other._file_header;
 	_headers = other._headers;
 	_body = other._body;
@@ -161,9 +166,21 @@ std::string HTTPMessage::getMessage() const
 		msg += it->first + ": ";
 		for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); vit++)
 		{
-			msg += *vit;
-			if (vit != it->second.end() - 1)
-				msg += "; ";
+			if (it->first == "Set-Cookie")
+			{
+				msg += *vit;
+				if (vit != it->second.end() - 1)
+				{
+					msg += CRLF;
+					msg += "Set-Cookie:";
+				}
+			}
+			else
+			{
+				msg += *vit;
+				if (vit != it->second.end() - 1)
+					msg += "; ";
+			}
 		}
 		msg += CRLF;
 	}
@@ -185,6 +202,11 @@ const std::string &HTTPMessage::getMethod() const
 const std::string &HTTPMessage::getPath() const
 {
 	return _path;
+}
+
+const std::string &HTTPMessage::getUrlParams() const
+{
+	return _url_params;
 }
 
 void HTTPMessage::setStatus(const std::string &status)

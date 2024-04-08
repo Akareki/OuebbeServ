@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/15 15:19:15 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/04 13:49:01 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 10:07:15 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,14 +22,14 @@
 #include <vector>
 
 const std::string Location::optNames[OPTNB]
-	= {"root", "index", "autoindex", "return", "client_max_body_size",
-		"error_page", "allow", "cgi", "set_cookie", "cookie"};
+		= {"root", "index", "autoindex", "return", "client_max_body_size",
+		   "error_page", "allow", "cgi", "set_cookie", "cookie"};
 
 void (Location::*Location::optSetters[OPTNB])(const std::string &) =
-	{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
-		&Location::setRedirect, &Location::setClientMaxBodySize,
-		&Location::setErrorPage, &Location::setAllowedMethods,
-		&Location::setCGI, &Location::setSetCookie, &Location::setCookie};
+		{&Location::setRoot, &Location::setIndex, &Location::setAutoindex,
+		 &Location::setRedirect, &Location::setClientMaxBodySize,
+		 &Location::setErrorPage, &Location::setAllowedMethods,
+		 &Location::setCGI, &Location::setSetCookie, &Location::setCookie};
 
 Location::Location()
 {
@@ -275,7 +275,7 @@ void Location::display() const
 	std::cout << std::endl;
 }
 
-std::string directory_listing(const std::string &directory)
+std::string directory_listing(const std::string &directory, const std::string &directory_w_root)
 {
 	std::string html_body = "<html><body><ul>";
 	DIR *dir = opendir(directory.c_str());
@@ -289,8 +289,7 @@ std::string directory_listing(const std::string &directory)
 	s_read = readdir(dir);
 	while (s_read != NULL)
 	{
-		std::cout << "sread name : " << s_read->d_name << std::endl;
-		html_body += "<a href=\"/";
+		html_body += "<a href=\"" + directory_w_root;
 		html_body += s_read->d_name;
 		html_body += "\">";
 		html_body += "<li>";
@@ -335,19 +334,92 @@ int	setResponseErrorBody(HTTPMessage &http_response, const std::string &full_err
 	return -1;
 }
 
-int Location::answer_request(HTTPMessage &http_request, int connfd)
+void handleCGI(HTTPMessage &http_response, const std::string &full_path, const HTTPMessage &http_request, const std::string &path_cgi, const std::string &cgi)
+{
+	char buffer[2000];
+	char *list_buffer[100] = {const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
+	char *list_buffer_py[100] = {const_cast<char*>("/usr/bin/python3"), const_cast<char*>(path_cgi.c_str()), const_cast<char*>(full_path.c_str()), NULL};
+	std::string query_string = http_request.getUrlParams();
+	std::string env_query = ("QUERY_STRING=" + query_string);
+	char *env[] = {
+			const_cast<char*>(env_query.c_str()),
+			NULL
+	};
+	int pipefd[2];
+	if (pipe(pipefd) == -1)
+		throw std::runtime_error("pipe issue");
+	pid_t pid = fork();
+	if (pid == -1)
+		throw std::runtime_error("fork issue");
+	if (pid == 0)
+	{
+		close(pipefd[0]);
+		dup2(pipefd[1], 1);
+		close(pipefd[1]);
+		if (cgi == "php")
+			execve(path_cgi.c_str(), list_buffer, env);
+		else
+			execve("/usr/bin/python3", list_buffer_py, env);
+	}
+	else
+	{
+		close(pipefd[1]);
+		ssize_t len_read;
+		len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
+		if (len_read == -1)
+			throw std::runtime_error("read issue in location.cpp");
+		buffer[len_read] = '\0';
+		close(pipefd[0]);
+		waitpid(pid, NULL, 0);
+		std::string body = split(buffer, "\r\n")[2];
+		http_response.addHeader("Content-Type", "text/html");
+		http_response.addHeader("Content-Type", "charset=UTF-8");
+		http_response.setBody(body);
+	}
+}
+
+int Location::answer_request(const HTTPMessage &http_request, int connfd)
 {
 	bool isindexadded = false;
-	std::string full_path = this->get_full_path(http_request, isindexadded);
-	std::cout << "full_path : " << full_path << std::endl;
+	std::string temp_index;
+	bool iscookieadded = false;
+	DIR *dir;
+	try {
+		for (std::vector<std::string>::const_iterator it = http_request.getHeaders().at("Cookie").begin(); it != http_request.getHeaders().at("Cookie").end(); it++)
+		{
+			if (*it == "visited=true" && !_cookie["visited=true"].empty())
+			{
+				temp_index = _cookie["visited=true"];
+				iscookieadded = true;
+				break ;
+			}
+		}
+		if (iscookieadded == false)
+		{
+			temp_index = _index;
+		}
+	} catch (...) {
+		temp_index = _index;
+	}
+	std::string full_path = this->get_full_path(http_request, isindexadded, temp_index);
 	std::string body;
 	HTTPMessage http_response;
+	bool is_allowed_method = false;
+	try {
+		if (_allowed_methods.at(http_request.getMethod()) == true)
+			is_allowed_method = true;
+	} catch (...) {
+	}
+	for (std::vector<std::string>::iterator it = _set_cookie.begin(); it != _set_cookie.end(); it++)
+	{
+		http_response.addHeader("Set-Cookie", *it);
+	}
 	if (http_request.getBody().length() > _client_max_body_size)
 	{
 		if (setResponseErrorBody(http_response, "413 Request Entity Too Large", "413", _error_pages) == -1)
 			http_response.setBody("<h1>413 Request Entity Too Large</h1>");
 	}
-	else if (_allowed_methods.at(http_request.getMethod()) == false)
+	else if (is_allowed_method == false)
 	{
 		if (setResponseErrorBody(http_response, "405 Method Not Allowed", "405", _error_pages) == -1)
 			http_response.setBody("<h1>405 Method Not Allowed.</h1>");
@@ -362,50 +434,26 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 		std::ifstream file(full_path.c_str());
 		if (file && file.is_open() && !is_directory(full_path))
 		{
-			if (full_path.find("index.php") != std::string::npos)
+			size_t index = full_path.find_last_of(".");
+			if (index != std::string::npos)
 			{
-				char buffer[2000];
-				char *list_buffer[100] = {const_cast<char*>("/usr/bin/php-cgi"), const_cast<char*>(full_path.c_str()), NULL};
-				int pipefd[2];
-				if (pipe(pipefd) == -1)
-					throw std::runtime_error("pipe issue");
-				pid_t pid = fork();
-				if (pid == -1)
-					throw std::runtime_error("fork issue");
-				if (pid == 0)
-				{
-					close(pipefd[0]);
-					dup2(pipefd[1], 1);
-					close(pipefd[1]);
-					execve("/usr/bin/php-cgi", list_buffer, NULL);
-				}
+				if (!_cgi["php"].empty() && full_path.substr(index + 1 ) == "php")
+					handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["php"], "php");
+				else if (!_cgi["python"].empty() && full_path.substr(index + 1 ) == "py")
+					handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["python"], "py");
 				else
 				{
-					close(pipefd[1]);
-					ssize_t len_read;
-					len_read = read(pipefd[0], buffer, sizeof(buffer) - 1);
-					if (len_read == -1)
-						throw std::runtime_error("read issue");
-					buffer[len_read] = '\0';
-					close(pipefd[0]);
-					waitpid(pid, NULL, 0);
-					std::string body = split(buffer, "\r\n")[2];
-					http_response.addHeader("Content-Type", "text/html");
-					http_response.addHeader("Content-Type", "charset=UTF-8");
+					std::stringstream body_buffer;
+					body_buffer << file.rdbuf();
+					body = body_buffer.str();
 					http_response.setBody(body);
 				}
 			}
-			else
-			{
-				std::stringstream body_buffer;
-				body_buffer << file.rdbuf();
-				body = body_buffer.str();
-				http_response.setBody(body);
-			}
 		}
-		else if (_autoindex && (full_path[full_path.length() - 1] == '/' || (isindexadded && http_request.getPath() == "/")))
+		else if (_autoindex && isindexadded == true && (dir = opendir(full_path.substr(0, full_path.find_last_of("/")).c_str())) && dir != NULL)
 		{
-			body = directory_listing(_root);
+			closedir(dir);
+			body = directory_listing(full_path.substr(0, full_path.find_last_of("/")), http_request.getPath());
 			http_response.setBody(body);
 		}
 		else
@@ -442,6 +490,21 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 				file.close();
 			}
 		}
+		std::ifstream file(full_path.c_str());
+		if (file && file.is_open() && !is_directory(full_path))
+		{
+			if (!_cgi["php"].empty())
+				handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["php"], "php");
+			else if (!_cgi["python"].empty())
+				handleCGI(http_response, get_full_path(http_request, isindexadded, temp_index), http_request, _cgi["python"], "py");
+			else
+			{
+				std::stringstream body_buffer;
+				body_buffer << file.rdbuf();
+				body = body_buffer.str();
+				http_response.setBody(body);
+			}
+		}
 	}
 	else if (http_request.getMethod() == "DELETE")
 	{
@@ -458,12 +521,12 @@ int Location::answer_request(HTTPMessage &http_request, int connfd)
 	return (size_send);
 }
 
-std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded)
+std::string Location::get_full_path(const HTTPMessage &http_request, bool &isindexadded, const std::string &index)
 {
 	std::string full_path(_root.substr(0, _root.length() - 1) + http_request.getPath());
 	if (full_path[full_path.length() - 1] == '/')
 	{
-		full_path += _index;
+		full_path += index;
 		isindexadded = true;
 	}
 	return (full_path);
