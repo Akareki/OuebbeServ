@@ -6,7 +6,7 @@
 /*   By: aoizel <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/02 09:19:26 by aoizel            #+#    #+#             */
-/*   Updated: 2024/04/08 13:17:52 by aoizel           ###   ########.fr       */
+/*   Updated: 2024/04/08 13:35:40 by aoizel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,6 @@ int Client::readRequest()
 	if (len_read <= 0)
 		return (len_read);
 	buffer[len_read] = '\0';
-	std::cout << buffer << std::endl;
 	_request = HTTPMessage(buffer);
 	return (-2);
 }
