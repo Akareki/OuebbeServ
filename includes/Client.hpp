@@ -13,6 +13,8 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 #define CLIENT_TIMEOUT 5
+
+#include <time.h>
 #include "HTTPMessage.hpp"
 #include <string>
 

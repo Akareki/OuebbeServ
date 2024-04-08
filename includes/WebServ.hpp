@@ -40,7 +40,6 @@ public:
 		WebServ();
 		WebServ(const WebServ&);
 		std::vector<Socket> _sockets;
-		bool _running;
 		std::map<int, Client> _clients;
 		int _epollfd;
 		struct epoll_event _event;
